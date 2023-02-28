@@ -10,8 +10,13 @@ authors = ["Signal Messenger LLC"]
 edition = "2018"
 license = "AGPL-3.0-only"
 
+[dependencies.curve25519-dalek]
+features = ["serde"]
+version = "3.0.0"
+git = "https://github.com/signalapp/curve25519-dalek.git"
+branch = "lizard2"
+
 [dependencies]
-curve25519-dalek = "3.0"
 sha2 = "0.9"
 hmac = "0.11"
 
