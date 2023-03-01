@@ -5,7 +5,7 @@
 
 #![allow(non_snake_case)]
 
-use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
+// use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 use serde::{Deserialize, Serialize};
@@ -13,13 +13,10 @@ use serde::{Deserialize, Serialize};
 use crate::common::array_utils::{ArrayLike, OneBased};
 use crate::common::sho::*;
 use crate::common::simple_types::*;
-use crate::crypto::receipt_struct::ReceiptStruct;
-use crate::crypto::timestamp_struct::TimestampStruct;
-use crate::crypto::{
-    profile_key_credential_request, receipt_credential_request, receipt_struct, uid_struct,
-};
+use crate::crypto::uid_struct;
 use crate::{
-    NUM_AUTH_CRED_ATTRIBUTES, NUM_PROFILE_KEY_CRED_ATTRIBUTES, NUM_RECEIPT_CRED_ATTRIBUTES,
+    NUM_AUTH_CRED_ATTRIBUTES, 
+    // NUM_PROFILE_KEY_CRED_ATTRIBUTES, NUM_RECEIPT_CRED_ATTRIBUTES,
 };
 
 use lazy_static::lazy_static;
@@ -66,25 +63,6 @@ impl AttrScalars for AuthCredential {
     // Store four scalars for backwards compatibility.
     type Storage = [Scalar; 4];
     const NUM_ATTRS: usize = NUM_AUTH_CRED_ATTRIBUTES;
-}
-impl AttrScalars for AuthCredentialWithPni {
-    type Storage = [Scalar; 5];
-}
-impl AttrScalars for ProfileKeyCredential {
-    // Store four scalars for backwards compatibility.
-    type Storage = [Scalar; 4];
-    const NUM_ATTRS: usize = NUM_PROFILE_KEY_CRED_ATTRIBUTES;
-}
-impl AttrScalars for ExpiringProfileKeyCredential {
-    type Storage = [Scalar; 5];
-}
-impl AttrScalars for ReceiptCredential {
-    // Store four scalars for backwards compatibility.
-    type Storage = [Scalar; 4];
-    const NUM_ATTRS: usize = NUM_RECEIPT_CRED_ATTRIBUTES;
-}
-impl AttrScalars for PniCredential {
-    type Storage = [Scalar; 6];
 }
 
 #[derive(Serialize, Deserialize)]
@@ -138,108 +116,6 @@ pub struct AuthCredential {
     pub(crate) V: RistrettoPoint,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct AuthCredentialWithPni {
-    pub(crate) t: Scalar,
-    pub(crate) U: RistrettoPoint,
-    pub(crate) V: RistrettoPoint,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ProfileKeyCredential {
-    pub(crate) t: Scalar,
-    pub(crate) U: RistrettoPoint,
-    pub(crate) V: RistrettoPoint,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct BlindedProfileKeyCredentialWithSecretNonce {
-    pub(crate) rprime: Scalar,
-    pub(crate) t: Scalar,
-    pub(crate) U: RistrettoPoint,
-    pub(crate) S1: RistrettoPoint,
-    pub(crate) S2: RistrettoPoint,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct BlindedProfileKeyCredential {
-    pub(crate) t: Scalar,
-    pub(crate) U: RistrettoPoint,
-    pub(crate) S1: RistrettoPoint,
-    pub(crate) S2: RistrettoPoint,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ExpiringProfileKeyCredential {
-    pub(crate) t: Scalar,
-    pub(crate) U: RistrettoPoint,
-    pub(crate) V: RistrettoPoint,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct BlindedExpiringProfileKeyCredentialWithSecretNonce {
-    pub(crate) rprime: Scalar,
-    pub(crate) t: Scalar,
-    pub(crate) U: RistrettoPoint,
-    pub(crate) S1: RistrettoPoint,
-    pub(crate) S2: RistrettoPoint,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct BlindedExpiringProfileKeyCredential {
-    pub(crate) t: Scalar,
-    pub(crate) U: RistrettoPoint,
-    pub(crate) S1: RistrettoPoint,
-    pub(crate) S2: RistrettoPoint,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PniCredential {
-    pub(crate) t: Scalar,
-    pub(crate) U: RistrettoPoint,
-    pub(crate) V: RistrettoPoint,
-}
-#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct BlindedPniCredentialWithSecretNonce {
-    pub(crate) rprime: Scalar,
-    pub(crate) t: Scalar,
-    pub(crate) U: RistrettoPoint,
-    pub(crate) S1: RistrettoPoint,
-    pub(crate) S2: RistrettoPoint,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct BlindedPniCredential {
-    pub(crate) t: Scalar,
-    pub(crate) U: RistrettoPoint,
-    pub(crate) S1: RistrettoPoint,
-    pub(crate) S2: RistrettoPoint,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ReceiptCredential {
-    pub(crate) t: Scalar,
-    pub(crate) U: RistrettoPoint,
-    pub(crate) V: RistrettoPoint,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct BlindedReceiptCredentialWithSecretNonce {
-    pub(crate) rprime: Scalar,
-    pub(crate) t: Scalar,
-    pub(crate) U: RistrettoPoint,
-    pub(crate) S1: RistrettoPoint,
-    pub(crate) S2: RistrettoPoint,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct BlindedReceiptCredential {
-    pub(crate) t: Scalar,
-    pub(crate) U: RistrettoPoint,
-    pub(crate) S1: RistrettoPoint,
-    pub(crate) S2: RistrettoPoint,
-}
-
 pub(crate) fn convert_to_points_uid_struct(
     uid: uid_struct::UidStruct,
     redemption_time: CoarseRedemptionTime,
@@ -247,39 +123,6 @@ pub(crate) fn convert_to_points_uid_struct(
     let system = SystemParams::get_hardcoded();
     let redemption_time_scalar = encode_redemption_time(redemption_time);
     vec![uid.M1, uid.M2, redemption_time_scalar * system.G_m3]
-}
-
-pub(crate) fn convert_to_points_aci_pni_timestamp(
-    aci: uid_struct::UidStruct,
-    pni: uid_struct::UidStruct,
-    redemption_time: Timestamp,
-) -> Vec<RistrettoPoint> {
-    let system = SystemParams::get_hardcoded();
-    let redemption_time_scalar = TimestampStruct::calc_m_from(redemption_time);
-    vec![
-        aci.M1,
-        aci.M2,
-        pni.M1,
-        pni.M2,
-        redemption_time_scalar * system.G_m5,
-    ]
-}
-
-pub(crate) fn convert_to_points_receipt_struct(
-    receipt: receipt_struct::ReceiptStruct,
-) -> Vec<RistrettoPoint> {
-    let system = SystemParams::get_hardcoded();
-    let m1 = receipt.calc_m1();
-    let receipt_serial_scalar = encode_receipt_serial_bytes(receipt.receipt_serial_bytes);
-    vec![m1 * system.G_m1, receipt_serial_scalar * system.G_m2]
-}
-
-pub(crate) fn convert_to_point_M2_receipt_serial_bytes(
-    receipt_serial_bytes: ReceiptSerialBytes,
-) -> RistrettoPoint {
-    let system = SystemParams::get_hardcoded();
-    let receipt_serial_scalar = encode_receipt_serial_bytes(receipt_serial_bytes);
-    receipt_serial_scalar * system.G_m2
 }
 
 impl SystemParams {
@@ -455,182 +298,6 @@ impl KeyPair<AuthCredential> {
         let M = convert_to_points_uid_struct(uid, redemption_time);
         let (t, U, V) = self.credential_core(&M, sho);
         AuthCredential { t, U, V }
-    }
-}
-
-impl KeyPair<AuthCredentialWithPni> {
-    pub fn create_auth_credential_with_pni(
-        &self,
-        aci: uid_struct::UidStruct,
-        pni: uid_struct::UidStruct,
-        redemption_time: Timestamp,
-        sho: &mut Sho,
-    ) -> AuthCredentialWithPni {
-        let M = convert_to_points_aci_pni_timestamp(aci, pni, redemption_time);
-        let (t, U, V) = self.credential_core(&M, sho);
-        AuthCredentialWithPni { t, U, V }
-    }
-}
-
-impl KeyPair<ProfileKeyCredential> {
-    pub fn create_blinded_profile_key_credential(
-        &self,
-        uid: uid_struct::UidStruct,
-        public_key: profile_key_credential_request::PublicKey,
-        ciphertext: profile_key_credential_request::Ciphertext,
-        sho: &mut Sho,
-    ) -> BlindedProfileKeyCredentialWithSecretNonce {
-        let M = [uid.M1, uid.M2];
-
-        let (t, U, Vprime) = self.credential_core(&M, sho);
-        let rprime = sho.get_scalar();
-        let R1 = rprime * RISTRETTO_BASEPOINT_POINT;
-        let R2 = rprime * public_key.Y + Vprime;
-        let S1 = R1 + (self.y[3] * ciphertext.D1) + (self.y[4] * ciphertext.E1);
-        let S2 = R2 + (self.y[3] * ciphertext.D2) + (self.y[4] * ciphertext.E2);
-        BlindedProfileKeyCredentialWithSecretNonce {
-            rprime,
-            t,
-            U,
-            S1,
-            S2,
-        }
-    }
-}
-
-impl KeyPair<ExpiringProfileKeyCredential> {
-    pub fn create_blinded_expiring_profile_key_credential(
-        &self,
-        uid: uid_struct::UidStruct,
-        public_key: profile_key_credential_request::PublicKey,
-        ciphertext: profile_key_credential_request::Ciphertext,
-        credential_expiration_time: Timestamp,
-        sho: &mut Sho,
-    ) -> BlindedExpiringProfileKeyCredentialWithSecretNonce {
-        let M = [uid.M1, uid.M2];
-
-        let (t, U, Vprime) = self.credential_core(&M, sho);
-
-        let params = SystemParams::get_hardcoded();
-        let m5 = TimestampStruct::calc_m_from(credential_expiration_time);
-        let M5 = m5 * params.G_m5;
-        let Vprime_with_expiration = Vprime + (self.y[5] * M5);
-
-        let rprime = sho.get_scalar();
-        let R1 = rprime * RISTRETTO_BASEPOINT_POINT;
-        let R2 = rprime * public_key.Y + Vprime_with_expiration;
-        let S1 = R1 + (self.y[3] * ciphertext.D1) + (self.y[4] * ciphertext.E1);
-        let S2 = R2 + (self.y[3] * ciphertext.D2) + (self.y[4] * ciphertext.E2);
-        BlindedExpiringProfileKeyCredentialWithSecretNonce {
-            rprime,
-            t,
-            U,
-            S1,
-            S2,
-        }
-    }
-}
-
-impl KeyPair<PniCredential> {
-    pub fn create_blinded_pni_credential(
-        &self,
-        uid: uid_struct::UidStruct,
-        pni: uid_struct::UidStruct,
-        public_key: profile_key_credential_request::PublicKey,
-        ciphertext: profile_key_credential_request::Ciphertext,
-        sho: &mut Sho,
-    ) -> BlindedPniCredentialWithSecretNonce {
-        let M = [uid.M1, uid.M2];
-
-        let (t, U, Vprime) = self.credential_core(&M, sho);
-        let Vprime_with_pni = Vprime + (self.y[5] * pni.M1) + (self.y[6] * pni.M2);
-        let rprime = sho.get_scalar();
-        let R1 = rprime * RISTRETTO_BASEPOINT_POINT;
-        let R2 = rprime * public_key.Y + Vprime_with_pni;
-        let S1 = R1 + (self.y[3] * ciphertext.D1) + (self.y[4] * ciphertext.E1);
-        let S2 = R2 + (self.y[3] * ciphertext.D2) + (self.y[4] * ciphertext.E2);
-        BlindedPniCredentialWithSecretNonce {
-            rprime,
-            t,
-            U,
-            S1,
-            S2,
-        }
-    }
-}
-
-impl KeyPair<ReceiptCredential> {
-    pub fn create_blinded_receipt_credential(
-        &self,
-        public_key: receipt_credential_request::PublicKey,
-        ciphertext: receipt_credential_request::Ciphertext,
-        receipt_expiration_time: Timestamp,
-        receipt_level: ReceiptLevel,
-        sho: &mut Sho,
-    ) -> BlindedReceiptCredentialWithSecretNonce {
-        let params = SystemParams::get_hardcoded();
-        let m1 = ReceiptStruct::calc_m1_from(receipt_expiration_time, receipt_level);
-        let M = [m1 * params.G_m1];
-
-        let (t, U, Vprime) = self.credential_core(&M, sho);
-        let rprime = sho.get_scalar();
-        let R1 = rprime * RISTRETTO_BASEPOINT_POINT;
-        let R2 = rprime * public_key.Y + Vprime;
-        let S1 = self.y[2] * ciphertext.D1 + R1;
-        let S2 = self.y[2] * ciphertext.D2 + R2;
-        BlindedReceiptCredentialWithSecretNonce {
-            rprime,
-            t,
-            U,
-            S1,
-            S2,
-        }
-    }
-}
-
-impl BlindedProfileKeyCredentialWithSecretNonce {
-    pub fn get_blinded_profile_key_credential(&self) -> BlindedProfileKeyCredential {
-        BlindedProfileKeyCredential {
-            t: self.t,
-            U: self.U,
-            S1: self.S1,
-            S2: self.S2,
-        }
-    }
-}
-
-impl BlindedExpiringProfileKeyCredentialWithSecretNonce {
-    pub fn get_blinded_expiring_profile_key_credential(
-        &self,
-    ) -> BlindedExpiringProfileKeyCredential {
-        BlindedExpiringProfileKeyCredential {
-            t: self.t,
-            U: self.U,
-            S1: self.S1,
-            S2: self.S2,
-        }
-    }
-}
-
-impl BlindedPniCredentialWithSecretNonce {
-    pub fn get_blinded_pni_credential(&self) -> BlindedPniCredential {
-        BlindedPniCredential {
-            t: self.t,
-            U: self.U,
-            S1: self.S1,
-            S2: self.S2,
-        }
-    }
-}
-
-impl BlindedReceiptCredentialWithSecretNonce {
-    pub fn get_blinded_receipt_credential(&self) -> BlindedReceiptCredential {
-        BlindedReceiptCredential {
-            t: self.t,
-            U: self.U,
-            S1: self.S1,
-            S2: self.S2,
-        }
     }
 }
 
