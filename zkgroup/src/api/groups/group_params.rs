@@ -27,7 +27,6 @@ pub struct GroupSecretParams {
     group_id: GroupIdentifierBytes,
     blob_key: AesKeyBytes,
     pub(crate) uid_enc_key_pair: crypto::uid_encryption::KeyPair,
-    pub(crate) profile_key_enc_key_pair: crypto::profile_key_encryption::KeyPair,
 }
 
 #[derive(Copy, Clone, Serialize, Deserialize)]
@@ -35,7 +34,6 @@ pub struct GroupPublicParams {
     reserved: ReservedBytes,
     group_id: GroupIdentifierBytes,
     pub(crate) uid_enc_public_key: crypto::uid_encryption::PublicKey,
-    pub(crate) profile_key_enc_public_key: crypto::profile_key_encryption::PublicKey,
 }
 
 impl GroupMasterKey {
@@ -69,8 +67,6 @@ impl GroupSecretParams {
         group_id.copy_from_slice(&sho.squeeze(GROUP_IDENTIFIER_LEN)[..]);
         blob_key.copy_from_slice(&sho.squeeze(AES_KEY_LEN)[..]);
         let uid_enc_key_pair = crypto::uid_encryption::KeyPair::derive_from(&mut sho);
-        let profile_key_enc_key_pair =
-            crypto::profile_key_encryption::KeyPair::derive_from(&mut sho);
 
         Self {
             reserved: Default::default(),
@@ -78,7 +74,6 @@ impl GroupSecretParams {
             group_id,
             blob_key,
             uid_enc_key_pair,
-            profile_key_enc_key_pair,
         }
     }
 
@@ -94,7 +89,6 @@ impl GroupSecretParams {
         GroupPublicParams {
             reserved: Default::default(),
             uid_enc_public_key: self.uid_enc_key_pair.get_public_key(),
-            profile_key_enc_public_key: self.profile_key_enc_key_pair.get_public_key(),
             group_id: self.group_id,
         }
     }
@@ -121,41 +115,6 @@ impl GroupSecretParams {
     ) -> Result<UidBytes, ZkGroupVerificationFailure> {
         let uid = self.uid_enc_key_pair.decrypt(ciphertext.ciphertext)?;
         Ok(uid.to_bytes())
-    }
-
-    pub fn encrypt_profile_key(
-        &self,
-        profile_key: api::profiles::ProfileKey,
-        uid_bytes: UidBytes,
-    ) -> api::groups::ProfileKeyCiphertext {
-        self.encrypt_profile_key_bytes(profile_key.bytes, uid_bytes)
-    }
-
-    pub fn encrypt_profile_key_bytes(
-        &self,
-        profile_key_bytes: ProfileKeyBytes,
-        uid_bytes: UidBytes,
-    ) -> api::groups::ProfileKeyCiphertext {
-        let profile_key =
-            crypto::profile_key_struct::ProfileKeyStruct::new(profile_key_bytes, uid_bytes);
-        let ciphertext = self.profile_key_enc_key_pair.encrypt(profile_key);
-        api::groups::ProfileKeyCiphertext {
-            reserved: Default::default(),
-            ciphertext,
-        }
-    }
-
-    pub fn decrypt_profile_key(
-        &self,
-        ciphertext: api::groups::ProfileKeyCiphertext,
-        uid_bytes: UidBytes,
-    ) -> Result<api::profiles::ProfileKey, ZkGroupVerificationFailure> {
-        let profile_key_struct = self
-            .profile_key_enc_key_pair
-            .decrypt(ciphertext.ciphertext, uid_bytes)?;
-        Ok(api::profiles::ProfileKey {
-            bytes: profile_key_struct.bytes,
-        })
     }
 
     pub fn encrypt_blob(&self, randomness: RandomnessBytes, plaintext: &[u8]) -> Vec<u8> {
