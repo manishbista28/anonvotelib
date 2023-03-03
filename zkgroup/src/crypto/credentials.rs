@@ -12,14 +12,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::common::array_utils::{ArrayLike, OneBased};
 use crate::common::sho::*;
-// use crate::common::simple_types::*;
+use crate::common::simple_types::*;
 use crate::crypto::uid_struct;
 use crate::crypto::{
     auth_credential_request, vote_credential_request
 };
 
 use crate::{
-    NUM_AUTH_CRED_ATTRIBUTES, NUM_PROFILE_KEY_CRED_ATTRIBUTES, 
+    NUM_AUTH_CRED_ATTRIBUTES, NUM_PROFILE_KEY_CRED_ATTRIBUTES, CoarseRedemptionTime, 
     // NUM_PROFILE_KEY_CRED_ATTRIBUTES, NUM_RECEIPT_CRED_ATTRIBUTES,
 };
 
@@ -170,8 +170,11 @@ pub struct BlindedVoteCredential {
 
 pub(crate) fn convert_to_points_uid_struct(
     uid: uid_struct::UidStruct,
+    redemption_time: CoarseRedemptionTime,
 ) -> Vec<RistrettoPoint> {
-    vec![uid.M1, uid.M2]
+    let system = SystemParams::get_hardcoded();
+    let redemption_time_scalar = encode_redemption_time(redemption_time);
+    vec![uid.M1, uid.M2, redemption_time_scalar * system.G_m3]
 }
 
 impl SystemParams {
@@ -342,9 +345,12 @@ impl KeyPair<AuthCredential> {
         &self,
         public_key: auth_credential_request::PublicKey,
         ciphertext: auth_credential_request::Ciphertext,
+        redemption_time: CoarseRedemptionTime,
         sho: &mut Sho,
     ) -> BlindedAuthCredentialWithSecretNonce {
-        let M = [];
+        let system = SystemParams::get_hardcoded();
+        let redemption_time_scalar = encode_redemption_time(redemption_time);
+        let M = [redemption_time_scalar * system.G_m3];
 
         let (t, U, Vprime) = self.credential_core(&M, sho);
         let rprime = sho.get_scalar();
