@@ -8,3 +8,5 @@ pub mod proofs;
 pub mod signature;
 pub mod uid_encryption;
 pub mod uid_struct;
+pub mod auth_credential_commitment;
+pub mod auth_credential_request;

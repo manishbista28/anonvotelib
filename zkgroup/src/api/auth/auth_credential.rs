@@ -12,6 +12,5 @@ use crate::crypto;
 pub struct AuthCredential {
     pub(crate) reserved: ReservedBytes,
     pub(crate) credential: crypto::credentials::AuthCredential,
-    pub(crate) uid: crypto::uid_struct::UidStruct,
-    pub(crate) redemption_time: CoarseRedemptionTime,
+    pub(crate) uid_bytes: UidBytes,
 }

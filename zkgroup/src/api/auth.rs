@@ -4,11 +4,13 @@
 //
 
 pub mod auth_credential;
-pub mod auth_credential_presentation;
 pub mod auth_credential_response;
+pub mod auth_credential_request;
+pub mod auth_credential_request_context;
+pub mod auth_credential_commitment;
 
 pub use auth_credential::AuthCredential;
-pub use auth_credential_presentation::{
-    AnyAuthCredentialPresentation, AuthCredentialPresentationV2,
-};
+pub use auth_credential_commitment::AuthCredentialCommitment;
 pub use auth_credential_response::AuthCredentialResponse;
+pub use auth_credential_request:: AuthCredentialRequest;
+pub use auth_credential_request_context::AuthCredentialRequestContext;
