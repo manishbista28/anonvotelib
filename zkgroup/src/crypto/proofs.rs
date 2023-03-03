@@ -15,7 +15,7 @@ use crate::common::array_utils::OneBased;
 use crate::common::constants::*;
 use crate::common::errors::*;
 use crate::common::sho::*;
-// use crate::common::simple_types::*;
+use crate::common::simple_types::*;
 // use crate::crypto::timestamp_struct::TimestampStruct;
 use crate::crypto::{
     credentials, uid_encryption, uid_struct,
@@ -48,6 +48,7 @@ pub struct AuthCredentialPresentationProof {
     C_x1: RistrettoPoint,
     C_y1: RistrettoPoint,
     C_y2: RistrettoPoint,
+    C_y3: RistrettoPoint,
     C_V: RistrettoPoint,
     poksho_proof: Vec<u8>,
 }
@@ -64,6 +65,7 @@ impl AuthCredentialIssuanceProof {
                 ("x1", "G_x1"),
                 ("y1", "G_y1"),
                 ("y2", "G_y2"),
+                ("y3", "G_y3"),
             ],
         );
         st.add("S1", &[("y1", "D1"), ("y2", "E1"), ("rprime", "G")]);
@@ -76,6 +78,7 @@ impl AuthCredentialIssuanceProof {
                 ("w", "G_w"),
                 ("x0", "U"),
                 ("x1", "tU"),
+                ("y3", "M3"),
             ],
         );
         st
@@ -86,9 +89,11 @@ impl AuthCredentialIssuanceProof {
         request_public_key: auth_credential_request::PublicKey,
         request: auth_credential_request::Ciphertext,
         blinded_credential: credentials::BlindedAuthCredentialWithSecretNonce,
+        redemption_time: CoarseRedemptionTime,
         sho: &mut Sho,
     ) -> Self {
         let credentials_system = credentials::SystemParams::get_hardcoded();
+        let redemption_time_scalar = encode_redemption_time(redemption_time);
 
         let mut scalar_args = poksho::ScalarArgs::new();
         scalar_args.add("w", key_pair.w);
@@ -97,6 +102,7 @@ impl AuthCredentialIssuanceProof {
         scalar_args.add("x1", key_pair.x1);
         scalar_args.add("y1", key_pair.y[1]);
         scalar_args.add("y2", key_pair.y[2]);
+        scalar_args.add("y3", key_pair.y[3]);
         scalar_args.add("rprime", blinded_credential.rprime);
 
         let mut point_args = poksho::PointArgs::new();
@@ -108,6 +114,7 @@ impl AuthCredentialIssuanceProof {
         point_args.add("G_x1", credentials_system.G_x1);
         point_args.add("G_y1", credentials_system.G_y[1]);
         point_args.add("G_y2", credentials_system.G_y[2]);
+        point_args.add("G_y3", credentials_system.G_y[3]);
         point_args.add("S1", blinded_credential.S1);
         point_args.add("D1", request.D1);
         point_args.add("E1", request.E1);
@@ -117,6 +124,8 @@ impl AuthCredentialIssuanceProof {
         point_args.add("Y", request_public_key.Y);
         point_args.add("U", blinded_credential.U);
         point_args.add("tU", blinded_credential.t * blinded_credential.U);
+        point_args.add("M3", redemption_time_scalar * credentials_system.G_m2);
+
 
         let poksho_proof = Self::get_poksho_statement()
             .prove(
@@ -135,8 +144,10 @@ impl AuthCredentialIssuanceProof {
         request_public_key: auth_credential_request::PublicKey,
         request: auth_credential_request::Ciphertext,
         blinded_credential: credentials::BlindedAuthCredential,
+        redemption_time: CoarseRedemptionTime,
     ) -> Result<(), ZkGroupVerificationFailure> {
         let credentials_system = credentials::SystemParams::get_hardcoded();
+        let redemption_time_scalar = encode_redemption_time(redemption_time);
 
         let mut point_args = poksho::PointArgs::new();
         point_args.add("C_W", credentials_public_key.C_W);
@@ -147,6 +158,7 @@ impl AuthCredentialIssuanceProof {
         point_args.add("G_x1", credentials_system.G_x1);
         point_args.add("G_y1", credentials_system.G_y[1]);
         point_args.add("G_y2", credentials_system.G_y[2]);
+        point_args.add("G_y3", credentials_system.G_y[3]);
         point_args.add("S1", blinded_credential.S1);
         point_args.add("D1", request.D1);
         point_args.add("E1", request.E1);
@@ -156,6 +168,7 @@ impl AuthCredentialIssuanceProof {
         point_args.add("Y", request_public_key.Y);
         point_args.add("U", blinded_credential.U);
         point_args.add("tU", blinded_credential.t * blinded_credential.U);
+        point_args.add("M3", redemption_time_scalar * credentials_system.G_m2);
 
 
         match Self::get_poksho_statement().verify_proof(&self.poksho_proof, &point_args, &[]) {
@@ -258,16 +271,18 @@ impl AuthCredentialPresentationProof {
         credential: credentials::AuthCredential,
         uid: uid_struct::UidStruct,
         uid_ciphertext: uid_encryption::Ciphertext,
+        redemption_time: CoarseRedemptionTime,
         sho: &mut Sho,
     ) -> Self {
         let credentials_system = credentials::SystemParams::get_hardcoded();
         let uid_system = uid_encryption::SystemParams::get_hardcoded();
-        let M = credentials::convert_to_points_uid_struct(uid);
+        let M = credentials::convert_to_points_uid_struct(uid, redemption_time);
 
         let z = sho.get_scalar();
 
         let C_y1 = z * credentials_system.G_y[1] + M[0];
         let C_y2 = z * credentials_system.G_y[2] + M[1];
+        let C_y3 = z * credentials_system.G_y[3];
 
         let C_x0 = z * credentials_system.G_x0 + credential.U;
         let C_V = z * credentials_system.G_V + credential.V;
@@ -302,6 +317,8 @@ impl AuthCredentialPresentationProof {
         point_args.add("C_y2-E_A2", C_y2 - uid_ciphertext.E_A2);
         point_args.add("G_y2", credentials_system.G_y[2]);
         point_args.add("-E_A1", -uid_ciphertext.E_A1);
+        point_args.add("C_y3", C_y3);
+        point_args.add("G_y3", credentials_system.G_y[3]);
 
         let poksho_proof = Self::get_poksho_statement()
             .prove(
@@ -317,6 +334,7 @@ impl AuthCredentialPresentationProof {
             C_x1,
             C_y1,
             C_y2,
+            C_y3,
             C_V,
             poksho_proof,
         }
@@ -327,6 +345,7 @@ impl AuthCredentialPresentationProof {
         credentials_key_pair: credentials::KeyPair<credentials::AuthCredential>,
         uid_enc_public_key: uid_encryption::PublicKey,
         uid_ciphertext: uid_encryption::Ciphertext,
+        redemption_time: CoarseRedemptionTime,
     ) -> Result<(), ZkGroupVerificationFailure> {
         let enc_system = uid_encryption::SystemParams::get_hardcoded();
         let credentials_system = credentials::SystemParams::get_hardcoded();
@@ -336,22 +355,25 @@ impl AuthCredentialPresentationProof {
             C_x1,
             C_y1,
             C_y2,
+            C_y3,
             C_V,
             poksho_proof,
         } = self;
 
-        let (C_x0, C_x1, C_y1, C_y2, C_V) = (*C_x0, *C_x1, *C_y1, *C_y2, *C_V);
+        let (C_x0, C_x1, C_y1, C_y2, C_y3, C_V) = (*C_x0, *C_x1, *C_y1, *C_y2, *C_y3, *C_V);
 
         let credentials::KeyPair {
             W,
             x0,
             x1,
-            y: OneBased([y1, y2, ..]),
+            y: OneBased([y1, y2, y3, ..]),
             I,
             ..
         } = credentials_key_pair;
 
-        let Z = C_V - W - x0 * C_x0 - x1 * C_x1 - y1 * C_y1 - y2 * C_y2;
+        let m3 = encode_redemption_time(redemption_time);
+        let M3 = m3 * credentials_system.G_m3;
+        let Z = C_V - W - x0 * C_x0 - x1 * C_x1 - y1 * C_y1 - y2 * C_y2- y3 * (C_y3 + M3);
 
         // Points listed in order of stmts for debugging
         let mut point_args = poksho::PointArgs::new();
@@ -370,6 +392,7 @@ impl AuthCredentialPresentationProof {
         //point_args.add("E_A1", uid_ciphertext.E_A1);
         //point_args.add("C_y1", C_y1);
         //point_args.add("G_y1", credentials_system.G_y[1]);
+        point_args.add("C_y3", C_y3);
         point_args.add("G_y3", credentials_system.G_y[3]);
         //point_args.add("0", RistrettoPoint::identity());
 

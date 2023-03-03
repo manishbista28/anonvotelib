@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 
-// use crate::common::constants::*;
+use crate::common::constants::*;
 use crate::common::errors::*;
 use crate::common::sho::*;
 use crate::common::simple_types::*;
@@ -64,6 +64,7 @@ impl ServerSecretParams {
         randomness: RandomnessBytes,
         request: &api::auth::AuthCredentialRequest,
         commitment: api::auth::AuthCredentialCommitment,
+        redemption_time: CoarseRedemptionTime,
     ) -> Result<api::auth::AuthCredentialResponse, ZkGroupVerificationFailure> {
         let mut sho = Sho::new(
             b"Signal_ZKGroup_20200424_Random_ServerSecretParams_IssueAuthCredential",
@@ -81,6 +82,7 @@ impl ServerSecretParams {
             .create_blinded_auth_credential(
                 request.public_key,
                 request.ciphertext,
+                redemption_time,
                 &mut sho,
             );
 
@@ -89,6 +91,7 @@ impl ServerSecretParams {
             request.public_key,
             request.ciphertext,
             blinded_credential_with_secret_nonce,
+            redemption_time,
             &mut sho,
         );
 
@@ -104,12 +107,39 @@ impl ServerSecretParams {
         &self,
         group_public_params: api::groups::GroupPublicParams,
         presentation: &api::auth::AuthCredentialPresentation,
+        current_time_in_seconds: Timestamp,
     ) -> Result<(), ZkGroupVerificationFailure> {
+        Self::check_auth_credential_redemption_time(
+            u64::from(presentation.redemption_time),
+            current_time_in_seconds,
+        )?;
+
         presentation.proof.verify(
             self.auth_credentials_key_pair,
             group_public_params.uid_enc_public_key,
             presentation.uid_enc_ciphertext,
+            presentation.redemption_time,
         )
+    }
+    
+    // TODO: redemption time value update from 2 to different
+    /// Checks that `current_time_in_seconds` is within the validity window defined by
+    /// `redemption_time_in_seconds`.
+    ///
+    /// All times are relative to SystemTime::UNIX_EPOCH,
+    /// but we don't actually use SystemTime because it's too small on 32-bit Linux.
+    fn check_auth_credential_redemption_time(
+        redemption_time_in_seconds: Timestamp,
+        current_time_in_seconds: Timestamp,
+    ) -> Result<(), ZkGroupVerificationFailure> {
+        let acceptable_start_time = redemption_time_in_seconds - SECONDS_PER_DAY;
+        let acceptable_end_time = redemption_time_in_seconds + 2 * SECONDS_PER_DAY;
+
+        if !(acceptable_start_time..=acceptable_end_time).contains(&current_time_in_seconds) {
+            return Err(ZkGroupVerificationFailure);
+        }
+
+        Ok(())
     }
 }
 
@@ -162,12 +192,14 @@ impl ServerPublicParams {
         &self,
         context: &api::auth::AuthCredentialRequestContext,
         response: &api::auth::AuthCredentialResponse,
+        redemption_time: CoarseRedemptionTime,
     ) -> Result<api::auth::AuthCredential, ZkGroupVerificationFailure> {
         response.proof.verify(
             self.auth_credentials_public_key,
             context.key_pair.get_public_key(),
             context.ciphertext_with_secret_nonce.get_ciphertext(),
             response.blinded_credential,
+            redemption_time,
         )?;
 
         let credential = context
@@ -178,6 +210,7 @@ impl ServerPublicParams {
             reserved: Default::default(),
             credential,
             uid_bytes: context.uid_bytes,
+            redemption_time,
         })
     }
 
@@ -200,12 +233,14 @@ impl ServerPublicParams {
             auth_credential.credential,
             uid,
             uuid_ciphertext.ciphertext,
+            auth_credential.redemption_time,
             &mut sho,
         );
 
         api::auth::AuthCredentialPresentation {
             proof,
             uid_enc_ciphertext: uuid_ciphertext.ciphertext,
+            redemption_time: auth_credential.redemption_time,
         }
     }
 
