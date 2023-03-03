@@ -28,6 +28,16 @@ pub struct AuthCredentialIssuanceProof {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
+pub struct VoteCredentialIssuanceProof {
+    poksho_proof: Vec<u8>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct VoteCredentialRequestProof {
+    poksho_proof: Vec<u8>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
 pub struct AuthCredentialRequestProof {
     poksho_proof: Vec<u8>,
 }
