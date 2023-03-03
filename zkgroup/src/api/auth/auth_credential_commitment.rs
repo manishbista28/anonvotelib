@@ -7,9 +7,8 @@ use crate::common::simple_types::*;
 use crate::crypto;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
-pub struct AuthCredentialResponse {
+#[derive(Copy, Clone, Serialize, Deserialize)]
+pub struct AuthCredentialCommitment {
     pub(crate) reserved: ReservedBytes,
-    pub(crate) blinded_credential: crypto::credentials::BlindedAuthCredential,
-    pub(crate) proof: crypto::proofs::AuthCredentialIssuanceProof,
+    pub(crate) commitment: crypto::auth_credential_commitment::Commitment,
 }

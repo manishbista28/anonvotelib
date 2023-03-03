@@ -8,8 +8,9 @@ use crate::crypto;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-pub struct AuthCredentialResponse {
+pub struct AuthCredentialRequest {
     pub(crate) reserved: ReservedBytes,
-    pub(crate) blinded_credential: crypto::credentials::BlindedAuthCredential,
-    pub(crate) proof: crypto::proofs::AuthCredentialIssuanceProof,
+    pub(crate) public_key: crypto::auth_credential_request::PublicKey,
+    pub(crate) ciphertext: crypto::auth_credential_request::Ciphertext,
+    pub(crate) proof: crypto::proofs::AuthCredentialRequestProof,
 }

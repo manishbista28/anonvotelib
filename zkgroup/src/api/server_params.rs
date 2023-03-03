@@ -62,91 +62,48 @@ impl ServerSecretParams {
     pub fn issue_auth_credential(
         &self,
         randomness: RandomnessBytes,
+        request: &api::auth::AuthCredentialRequest,
         uid_bytes: UidBytes,
-        redemption_time: CoarseRedemptionTime,
-    ) -> api::auth::AuthCredentialResponse {
+        commitment: api::auth::AuthCredentialCommitment,
+    ) -> Result<api::auth::AuthCredentialResponse, ZkGroupVerificationFailure> {
         let mut sho = Sho::new(
             b"Signal_ZKGroup_20200424_Random_ServerSecretParams_IssueAuthCredential",
             &randomness,
         );
 
+        request.proof.verify(
+            request.public_key,
+            request.ciphertext,
+            commitment.commitment,
+        )?;
+
         let uid = crypto::uid_struct::UidStruct::new(uid_bytes);
-        let credential =
-            self.auth_credentials_key_pair
-                .create_auth_credential(uid, redemption_time, &mut sho);
+        let blinded_credential_with_secret_nonce = self
+            .auth_credentials_key_pair
+            .create_blinded_auth_credential(
+                uid,
+                request.public_key,
+                request.ciphertext,
+                &mut sho,
+            );
+
         let proof = crypto::proofs::AuthCredentialIssuanceProof::new(
             self.auth_credentials_key_pair,
-            credential,
+            request.public_key,
+            request.ciphertext,
+            blinded_credential_with_secret_nonce,
             uid,
-            redemption_time,
             &mut sho,
         );
-        api::auth::AuthCredentialResponse {
+
+        Ok(api::auth::AuthCredentialResponse {
             reserved: Default::default(),
-            credential,
+            blinded_credential: blinded_credential_with_secret_nonce
+                .get_blinded_auth_credential(),
             proof,
-        }
+        })
     }
 
-    /// Checks that `current_time_in_seconds` is within the validity window defined by
-    /// `redemption_time_in_seconds`.
-    ///
-    /// All times are relative to SystemTime::UNIX_EPOCH,
-    /// but we don't actually use SystemTime because it's too small on 32-bit Linux.
-    fn check_auth_credential_redemption_time(
-        redemption_time_in_seconds: Timestamp,
-        current_time_in_seconds: Timestamp,
-    ) -> Result<(), ZkGroupVerificationFailure> {
-        let acceptable_start_time = redemption_time_in_seconds - SECONDS_PER_DAY;
-        let acceptable_end_time = redemption_time_in_seconds + 2 * SECONDS_PER_DAY;
-
-        if !(acceptable_start_time..=acceptable_end_time).contains(&current_time_in_seconds) {
-            return Err(ZkGroupVerificationFailure);
-        }
-
-        Ok(())
-    }
-
-    pub fn verify_auth_credential_presentation(
-        &self,
-        group_public_params: api::groups::GroupPublicParams,
-        presentation: &api::auth::AnyAuthCredentialPresentation,
-        current_time_in_seconds: Timestamp,
-    ) -> Result<(), ZkGroupVerificationFailure> {
-        Self::check_auth_credential_redemption_time(
-            presentation.get_redemption_time(),
-            current_time_in_seconds,
-        )?;
-
-        match presentation {
-            api::auth::AnyAuthCredentialPresentation::V2(presentation) => {
-                presentation.proof.verify(
-                    self.auth_credentials_key_pair,
-                    group_public_params.uid_enc_public_key,
-                    presentation.ciphertext,
-                    presentation.redemption_time,
-                )
-            }
-        }
-    }
-
-    pub fn verify_auth_credential_presentation_v2(
-        &self,
-        group_public_params: api::groups::GroupPublicParams,
-        presentation: &api::auth::AuthCredentialPresentationV2,
-        current_time_in_days: CoarseRedemptionTime,
-    ) -> Result<(), ZkGroupVerificationFailure> {
-        Self::check_auth_credential_redemption_time(
-            u64::from(presentation.get_redemption_time()) * SECONDS_PER_DAY,
-            u64::from(current_time_in_days) * SECONDS_PER_DAY,
-        )?;
-        presentation.proof.verify(
-            self.auth_credentials_key_pair,
-            group_public_params.uid_enc_public_key,
-            presentation.ciphertext,
-            presentation.redemption_time,
-        )
-    }
 }
 
 impl ServerPublicParams {
@@ -158,69 +115,64 @@ impl ServerPublicParams {
         self.sig_public_key.verify(message, signature)
     }
 
-    pub fn receive_auth_credential(
+    pub fn create_auth_credential_request_context(
         &self,
+        randomness: RandomnessBytes,
         uid_bytes: UidBytes,
-        redemption_time: CoarseRedemptionTime,
-        response: &api::auth::AuthCredentialResponse,
-    ) -> Result<api::auth::AuthCredential, ZkGroupVerificationFailure> {
-        let uid = crypto::uid_struct::UidStruct::new(uid_bytes);
-        response.proof.verify(
-            self.auth_credentials_public_key,
-            response.credential,
-            uid,
-            redemption_time,
-        )?;
-
-        Ok(api::auth::AuthCredential {
-            reserved: Default::default(),
-            credential: response.credential,
-            uid,
-            redemption_time,
-        })
-    }
-    pub fn create_auth_credential_presentation(
-        &self,
-        randomness: RandomnessBytes,
-        group_secret_params: api::groups::GroupSecretParams,
-        auth_credential: api::auth::AuthCredential,
-    ) -> api::auth::AnyAuthCredentialPresentation {
-        let presentation_v2 = self.create_auth_credential_presentation_v2(
-            randomness,
-            group_secret_params,
-            auth_credential,
-        );
-        api::auth::AnyAuthCredentialPresentation::V2(presentation_v2)
-    }
-
-    pub fn create_auth_credential_presentation_v2(
-        &self,
-        randomness: RandomnessBytes,
-        group_secret_params: api::groups::GroupSecretParams,
-        auth_credential: api::auth::AuthCredential,
-    ) -> api::auth::AuthCredentialPresentationV2 {
+    ) -> api::auth::AuthCredentialRequestContext {
         let mut sho = Sho::new(
-            b"Signal_ZKGroup_20220120_Random_ServerPublicParams_CreateAuthCredentialPresentationV2",
+            b"Signal_ZKGroup_20200424_Random_ServerPublicParams_CreateAuthCredentialRequestContext",
             &randomness,
         );
+        let uid_struct =
+            crypto::uid_struct::UidStruct::new(uid_bytes);
 
-        let uuid_ciphertext = group_secret_params.encrypt_uid_struct(auth_credential.uid);
+        let commitment_with_secret_nonce =
+            crypto::auth_credential_commitment::CommitmentWithSecretNonce::new(
+                uid_struct,
+            );
 
-        let proof = crypto::proofs::AuthCredentialPresentationProofV2::new(
-            self.auth_credentials_public_key,
-            group_secret_params.uid_enc_key_pair,
-            auth_credential.credential,
-            auth_credential.uid,
-            uuid_ciphertext.ciphertext,
-            auth_credential.redemption_time,
+        let key_pair = crypto::auth_credential_request::KeyPair::generate(&mut sho);
+        let ciphertext_with_secret_nonce = key_pair.encrypt(uid_struct, &mut sho);
+
+        let proof = crypto::proofs::AuthCredentialRequestProof::new(
+            key_pair,
+            ciphertext_with_secret_nonce,
+            commitment_with_secret_nonce,
             &mut sho,
         );
 
-        api::auth::AuthCredentialPresentationV2 {
-            version: [PRESENTATION_VERSION_2],
+        api::auth::AuthCredentialRequestContext {
+            reserved: Default::default(),
+            uid_bytes,
+            key_pair,
+            ciphertext_with_secret_nonce,
             proof,
-            ciphertext: uuid_ciphertext.ciphertext,
-            redemption_time: auth_credential.redemption_time,
         }
     }
+
+    pub fn receive_auth_credential(
+        &self,
+        context: &api::auth::AuthCredentialRequestContext,
+        response: &api::auth::AuthCredentialResponse,
+    ) -> Result<api::auth::AuthCredential, ZkGroupVerificationFailure> {
+        response.proof.verify(
+            self.auth_credentials_public_key,
+            context.key_pair.get_public_key(),
+            context.uid_bytes,
+            context.ciphertext_with_secret_nonce.get_ciphertext(),
+            response.blinded_credential,
+        )?;
+
+        let credential = context
+            .key_pair
+            .decrypt_blinded_auth_credential(response.blinded_credential);
+
+        Ok(api::auth::AuthCredential {
+            reserved: Default::default(),
+            credential,
+            uid_bytes: context.uid_bytes,
+        })
+    }
+
 }

@@ -8,7 +8,7 @@
 use crate::common::constants::*;
 use crate::common::sho::*;
 use crate::common::simple_types::*;
-use crate::crypto::profile_key_struct;
+use crate::crypto::uid_struct;
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 use serde::{Deserialize, Serialize};
@@ -75,8 +75,8 @@ impl CommitmentWithSecretNonce {
     ) -> CommitmentWithSecretNonce {
         let commitment_system = SystemParams::get_hardcoded();
 
-        let profile_key_struct::ProfileKeyStruct { M1, M2, bytes } = uid_key;
-        let j3 = Self::calc_j3(uid_bytes);
+        let uid_struct::UidStruct { M1, M2, bytes } = uid_key;
+        let j3 = Self::calc_j3(bytes);
         let J1 = (j3 * commitment_system.G_j1) + M1;
         let J2 = (j3 * commitment_system.G_j2) + M2;
         let J3 = j3 * commitment_system.G_j3;
@@ -91,7 +91,7 @@ impl CommitmentWithSecretNonce {
         }
     }
 
-    pub fn calc_j3(profile_key_bytes: ProfileKeyBytes, uid_bytes: UidBytes) -> Scalar {
+    pub fn calc_j3(uid_bytes: UidBytes) -> Scalar {
         let mut combined_array = [0u8; UUID_LEN];
         combined_array[..UUID_LEN].copy_from_slice(&uid_bytes);
         Sho::new(
@@ -113,11 +113,11 @@ mod tests {
         assert!(SystemParams::generate() == SystemParams::get_hardcoded());
     }
 
-    // #[test]
-    // fn test_commitment() {
-    //     let profile_key = profile_key_struct::ProfileKeyStruct::new(TEST_ARRAY_32, TEST_ARRAY_16);
-    //     let c1 = CommitmentWithSecretNonce::new(profile_key, TEST_ARRAY_16);
-    //     let c2 = CommitmentWithSecretNonce::new(profile_key, TEST_ARRAY_16);
-    //     assert!(c1 == c2);
-    // }
+    #[test]
+    fn test_commitment() {
+        let uid = uid_struct::UidStruct::new(TEST_ARRAY_16);
+        let c1 = CommitmentWithSecretNonce::new(uid);
+        let c2 = CommitmentWithSecretNonce::new(uid);
+        assert!(c1 == c2);
+    }
 }
