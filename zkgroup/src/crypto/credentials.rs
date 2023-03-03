@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::common::array_utils::{ArrayLike, OneBased};
 use crate::common::sho::*;
-use crate::common::simple_types::*;
+// use crate::common::simple_types::*;
 use crate::crypto::uid_struct;
 use crate::crypto::{
     auth_credential_request, vote_credential_request
@@ -166,6 +166,12 @@ pub struct BlindedVoteCredential {
     pub(crate) U: RistrettoPoint,
     pub(crate) S1: RistrettoPoint,
     pub(crate) S2: RistrettoPoint,
+}
+
+pub(crate) fn convert_to_points_uid_struct(
+    uid: uid_struct::UidStruct,
+) -> Vec<RistrettoPoint> {
+    vec![uid.M1, uid.M2]
 }
 
 impl SystemParams {
@@ -334,12 +340,11 @@ impl<S: AttrScalars> KeyPair<S> {
 impl KeyPair<AuthCredential> {
     pub fn create_blinded_auth_credential(
         &self,
-        uid: uid_struct::UidStruct,
         public_key: auth_credential_request::PublicKey,
         ciphertext: auth_credential_request::Ciphertext,
         sho: &mut Sho,
     ) -> BlindedAuthCredentialWithSecretNonce {
-        let M = [uid.M1, uid.M2];
+        let M = [];
 
         let (t, U, Vprime) = self.credential_core(&M, sho);
         let rprime = sho.get_scalar();
@@ -408,8 +413,8 @@ impl BlindedVoteCredentialWithSecretNonce {
 
 #[cfg(test)]
 mod tests {
-    use crate::common::constants::*;
-    use crate::crypto::proofs;
+    // use crate::common::constants::*;
+    // use crate::crypto::proofs;
 
     use super::*;
 

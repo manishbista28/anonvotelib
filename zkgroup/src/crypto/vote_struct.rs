@@ -51,7 +51,7 @@ impl VoteStruct {
         }
     }
 
-    pub fn from_partial_data(uid_bytes: UidBytes, division_bytes: ProfileKeyBytes, type_bytes: ProfileKeyBytes, identifier_bytes: ProfileKeyBytes, M1: RistrettoPoint, M2: RistrettoPoint) -> Self {
+    pub fn from_partial_data(division_bytes: ProfileKeyBytes, type_bytes: ProfileKeyBytes, identifier_bytes: ProfileKeyBytes, M1: RistrettoPoint, M2: RistrettoPoint) -> Self {
         let mut encoded_division_bytes = division_bytes;
         encoded_division_bytes[0] &= 254;
         encoded_division_bytes[31] &= 63;

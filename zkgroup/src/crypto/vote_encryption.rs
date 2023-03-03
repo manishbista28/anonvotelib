@@ -121,7 +121,7 @@ impl KeyPair {
                     pk[31] |= 0x40;
                 }
                 let M2 = vote_struct::VoteStruct::calc_combined(pk, uid_bytes);
-                let candidate_retval = vote_struct::VoteStruct::from_partial_data(uid_bytes, division_bytes, pk, identifier_bytes, M1, M2);
+                let candidate_retval = vote_struct::VoteStruct::from_partial_data(division_bytes, pk, identifier_bytes, M1, M2);
                 let found = M2.ct_eq(&target_M2) & is_valid_fe;
                 retval.conditional_assign(&candidate_retval, found);
                 n_found += found.unwrap_u8();
