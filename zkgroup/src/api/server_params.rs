@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::common::constants::*;
+// use crate::common::constants::*;
 use crate::common::errors::*;
 use crate::common::sho::*;
 use crate::common::simple_types::*;
@@ -63,7 +63,6 @@ impl ServerSecretParams {
         &self,
         randomness: RandomnessBytes,
         request: &api::auth::AuthCredentialRequest,
-        uid_bytes: UidBytes,
         commitment: api::auth::AuthCredentialCommitment,
     ) -> Result<api::auth::AuthCredentialResponse, ZkGroupVerificationFailure> {
         let mut sho = Sho::new(
@@ -77,11 +76,9 @@ impl ServerSecretParams {
             commitment.commitment,
         )?;
 
-        let uid = crypto::uid_struct::UidStruct::new(uid_bytes);
         let blinded_credential_with_secret_nonce = self
             .auth_credentials_key_pair
             .create_blinded_auth_credential(
-                uid,
                 request.public_key,
                 request.ciphertext,
                 &mut sho,
@@ -92,7 +89,6 @@ impl ServerSecretParams {
             request.public_key,
             request.ciphertext,
             blinded_credential_with_secret_nonce,
-            uid,
             &mut sho,
         );
 
@@ -104,6 +100,17 @@ impl ServerSecretParams {
         })
     }
 
+    pub fn verify_auth_credential_presentation(
+        &self,
+        group_public_params: api::groups::GroupPublicParams,
+        presentation: &api::auth::AuthCredentialPresentation,
+    ) -> Result<(), ZkGroupVerificationFailure> {
+        presentation.proof.verify(
+            self.auth_credentials_key_pair,
+            group_public_params.uid_enc_public_key,
+            presentation.uid_enc_ciphertext,
+        )
+    }
 }
 
 impl ServerPublicParams {
@@ -159,7 +166,6 @@ impl ServerPublicParams {
         response.proof.verify(
             self.auth_credentials_public_key,
             context.key_pair.get_public_key(),
-            context.uid_bytes,
             context.ciphertext_with_secret_nonce.get_ciphertext(),
             response.blinded_credential,
         )?;
@@ -173,6 +179,34 @@ impl ServerPublicParams {
             credential,
             uid_bytes: context.uid_bytes,
         })
+    }
+
+    pub fn create_auth_credential_presentation(
+        &self,
+        randomness: RandomnessBytes,
+        group_secret_params: api::groups::GroupSecretParams,
+        auth_credential: api::auth::AuthCredential,
+    ) -> api::auth::AuthCredentialPresentation {
+        let mut sho = Sho::new(
+            b"Signal_ZKGroup_20220120_Random_ServerPublicParams_CreateAuthCredentialPresentationV2",
+            &randomness,
+        );
+        let uid = crypto::uid_struct::UidStruct::new(auth_credential.uid_bytes);
+        let uuid_ciphertext = group_secret_params.encrypt_uid_struct(uid);
+        
+        let proof = crypto::proofs::AuthCredentialPresentationProof::new(
+            self.auth_credentials_public_key,
+            group_secret_params.uid_enc_key_pair,
+            auth_credential.credential,
+            uid,
+            uuid_ciphertext.ciphertext,
+            &mut sho,
+        );
+
+        api::auth::AuthCredentialPresentation {
+            proof,
+            uid_enc_ciphertext: uuid_ciphertext.ciphertext,
+        }
     }
 
 }
