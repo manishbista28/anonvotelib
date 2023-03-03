@@ -15,11 +15,11 @@ use crate::common::sho::*;
 use crate::common::simple_types::*;
 use crate::crypto::uid_struct;
 use crate::crypto::{
-    auth_credential_request,
+    auth_credential_request, vote_credential_request
 };
 
 use crate::{
-    NUM_AUTH_CRED_ATTRIBUTES, 
+    NUM_AUTH_CRED_ATTRIBUTES, NUM_PROFILE_KEY_CRED_ATTRIBUTES, 
     // NUM_PROFILE_KEY_CRED_ATTRIBUTES, NUM_RECEIPT_CRED_ATTRIBUTES,
 };
 
@@ -67,6 +67,12 @@ impl AttrScalars for AuthCredential {
     // Store four scalars for backwards compatibility.
     type Storage = [Scalar; 4];
     const NUM_ATTRS: usize = NUM_AUTH_CRED_ATTRIBUTES;
+}
+
+impl AttrScalars for VoteCredential { //TODO
+    // Store four scalars for backwards compatibility.
+    type Storage = [Scalar; 4];
+    const NUM_ATTRS: usize = NUM_PROFILE_KEY_CRED_ATTRIBUTES;
 }
 
 #[derive(Serialize, Deserialize)]
@@ -137,6 +143,30 @@ pub struct BlindedAuthCredential {
     pub(crate) S2: RistrettoPoint,
 }
 
+
+#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct VoteCredential {
+    pub(crate) t: Scalar,
+    pub(crate) U: RistrettoPoint,
+    pub(crate) V: RistrettoPoint,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BlindedVoteCredentialWithSecretNonce {
+    pub(crate) rprime: Scalar,
+    pub(crate) t: Scalar,
+    pub(crate) U: RistrettoPoint,
+    pub(crate) S1: RistrettoPoint,
+    pub(crate) S2: RistrettoPoint,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BlindedVoteCredential {
+    pub(crate) t: Scalar,
+    pub(crate) U: RistrettoPoint,
+    pub(crate) S1: RistrettoPoint,
+    pub(crate) S2: RistrettoPoint,
+}
 
 impl SystemParams {
     #[cfg(test)]
@@ -327,9 +357,47 @@ impl KeyPair<AuthCredential> {
     }
 }
 
+impl KeyPair<VoteCredential> {
+    pub fn create_blinded_vote_credential(
+        &self,
+        uid: uid_struct::UidStruct, // TODO
+        public_key: vote_credential_request::PublicKey,
+        ciphertext: vote_credential_request::Ciphertext,
+        sho: &mut Sho,
+    ) -> BlindedVoteCredentialWithSecretNonce {
+        let M = [uid.M1, uid.M2];
+
+        let (t, U, Vprime) = self.credential_core(&M, sho);
+        let rprime = sho.get_scalar();
+        let R1 = rprime * RISTRETTO_BASEPOINT_POINT;
+        let R2 = rprime * public_key.Y + Vprime;
+        let S1 = R1 + (self.y[3] * ciphertext.D1) + (self.y[4] * ciphertext.E1);
+        let S2 = R2 + (self.y[3] * ciphertext.D2) + (self.y[4] * ciphertext.E2);
+        BlindedVoteCredentialWithSecretNonce {
+            rprime,
+            t,
+            U,
+            S1,
+            S2,
+        }
+    }
+}
+
+
 impl BlindedAuthCredentialWithSecretNonce {
     pub fn get_blinded_auth_credential(&self) -> BlindedAuthCredential {
         BlindedAuthCredential {
+            t: self.t,
+            U: self.U,
+            S1: self.S1,
+            S2: self.S2,
+        }
+    }
+}
+
+impl BlindedVoteCredentialWithSecretNonce {
+    pub fn get_blinded_vote_credential(&self) -> BlindedVoteCredential {
+        BlindedVoteCredential {
             t: self.t,
             U: self.U,
             S1: self.S1,
