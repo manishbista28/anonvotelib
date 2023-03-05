@@ -20,6 +20,7 @@ use crate::common::simple_types::*;
 use crate::crypto::{
     credentials, uid_encryption, uid_struct,
     auth_credential_commitment, auth_credential_request,
+    vote_credential_request,
 };
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -29,11 +30,6 @@ pub struct AuthCredentialIssuanceProof {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct VoteCredentialIssuanceProof {
-    poksho_proof: Vec<u8>,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct VoteCredentialRequestProof {
     poksho_proof: Vec<u8>,
 }
 
@@ -397,6 +393,130 @@ impl AuthCredentialPresentationProof {
         //point_args.add("0", RistrettoPoint::identity());
 
         match Self::get_poksho_statement().verify_proof(poksho_proof, &point_args, &[]) {
+            Err(_) => Err(ZkGroupVerificationFailure),
+            Ok(_) => Ok(()),
+        }
+    }
+}
+
+
+impl VoteCredentialIssuanceProof {
+    pub fn get_poksho_statement() -> poksho::Statement {
+        let mut st = poksho::Statement::new();
+        st.add("C_W", &[("w", "G_w"), ("wprime", "G_wprime")]);
+        st.add(
+            "G_V-I",
+            &[
+                ("x0", "G_x0"),
+                ("x1", "G_x1"),
+                ("y1", "G_y1"),
+                ("y2", "G_y2"),
+                ("y3", "G_y3"),
+            ],
+        );
+        st.add("S1", &[("y1", "D1"), ("y2", "E1"), ("rprime", "G")]);
+        st.add(
+            "S2",
+            &[
+                ("y1", "D2"),
+                ("y2", "E2"),
+                ("rprime", "Y"),
+                ("w", "G_w"),
+                ("x0", "U"),
+                ("x1", "tU"),
+                ("y3", "M3"),
+            ],
+        );
+        st
+    }
+
+    pub fn new(
+        key_pair: credentials::KeyPair<credentials::VoteCredential>,
+        request_public_key: vote_credential_request::PublicKey,
+        ciphertext: vote_credential_request::Ciphertext,
+        blinded_credential: credentials::BlindedVoteCredentialWithSecretNonce,
+        sho: &mut Sho,
+    ) -> Self {
+        // let credentials_system = credentials::SystemParams::get_hardcoded();
+        // let redemption_time_scalar = encode_redemption_time(redemption_time);
+
+        let mut scalar_args = poksho::ScalarArgs::new();
+        scalar_args.add("w", key_pair.w);
+        scalar_args.add("wprime", key_pair.wprime);
+        scalar_args.add("x0", key_pair.x0);
+        scalar_args.add("x1", key_pair.x1);
+        scalar_args.add("y1", key_pair.y[1]);
+        scalar_args.add("y2", key_pair.y[2]);
+        scalar_args.add("y3", key_pair.y[3]);
+        scalar_args.add("rprime", blinded_credential.rprime);
+
+        let mut point_args = poksho::PointArgs::new();
+        // point_args.add("C_W", key_pair.C_W);
+        // point_args.add("G_w", credentials_system.G_w);
+        // point_args.add("G_wprime", credentials_system.G_wprime);
+        // point_args.add("G_V-I", credentials_system.G_V - key_pair.I);
+        // point_args.add("G_x0", credentials_system.G_x0);
+        // point_args.add("G_x1", credentials_system.G_x1);
+        // point_args.add("G_y1", credentials_system.G_y[1]);
+        // point_args.add("G_y2", credentials_system.G_y[2]);
+        // point_args.add("G_y3", credentials_system.G_y[3]);
+        // point_args.add("S1", blinded_credential.S1);
+        // point_args.add("D1", request.D1);
+        // point_args.add("E1", request.E1);
+        // point_args.add("S2", blinded_credential.S2);
+        // point_args.add("D2", request.D2);
+        // point_args.add("E2", request.E2);
+        // point_args.add("Y", request_public_key.Y);
+        // point_args.add("U", blinded_credential.U);
+        // point_args.add("tU", blinded_credential.t * blinded_credential.U);
+        // point_args.add("M3", redemption_time_scalar * credentials_system.G_m2);
+
+
+        let poksho_proof = Self::get_poksho_statement()
+            .prove(
+                &scalar_args,
+                &point_args,
+                &[],
+                &sho.squeeze(RANDOMNESS_LEN)[..],
+            )
+            .unwrap();
+        VoteCredentialIssuanceProof { poksho_proof }
+    }
+
+    pub fn verify(
+        &self,
+        // credentials_public_key: credentials::PublicKey,
+        // request_public_key: auth_credential_request::PublicKey,
+        // request: auth_credential_request::Ciphertext,
+        // blinded_credential: credentials::BlindedAuthCredential,
+        // redemption_time: CoarseRedemptionTime,
+    ) -> Result<(), ZkGroupVerificationFailure> {
+        // let credentials_system = credentials::SystemParams::get_hardcoded();
+        // let redemption_time_scalar = encode_redemption_time(redemption_time);
+
+        let mut point_args = poksho::PointArgs::new();
+        // point_args.add("C_W", credentials_public_key.C_W);
+        // point_args.add("G_w", credentials_system.G_w);
+        // point_args.add("G_wprime", credentials_system.G_wprime);
+        // point_args.add("G_V-I", credentials_system.G_V - credentials_public_key.I);
+        // point_args.add("G_x0", credentials_system.G_x0);
+        // point_args.add("G_x1", credentials_system.G_x1);
+        // point_args.add("G_y1", credentials_system.G_y[1]);
+        // point_args.add("G_y2", credentials_system.G_y[2]);
+        // point_args.add("G_y3", credentials_system.G_y[3]);
+        // point_args.add("S1", blinded_credential.S1);
+        // point_args.add("D1", request.D1);
+        // point_args.add("E1", request.E1);
+        // point_args.add("S2", blinded_credential.S2);
+        // point_args.add("D2", request.D2);
+        // point_args.add("E2", request.E2);
+        // point_args.add("Y", request_public_key.Y);
+        // point_args.add("U", blinded_credential.U);
+        // point_args.add("tU", blinded_credential.t * blinded_credential.U);
+        // point_args.add("M3", redemption_time_scalar * credentials_system.G_m2);
+
+
+        match Self::get_poksho_statement().verify_proof(&self.poksho_proof, &point_args, &[]) {
             Err(_) => Err(ZkGroupVerificationFailure),
             Ok(_) => Ok(()),
         }

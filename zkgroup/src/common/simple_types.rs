@@ -18,6 +18,11 @@ pub type GroupIdentifierBytes = [u8; GROUP_IDENTIFIER_LEN];
 pub type ProfileKeyVersionBytes = [u8; PROFILE_KEY_VERSION_LEN];
 pub type ProfileKeyVersionEncodedBytes = [u8; PROFILE_KEY_VERSION_ENCODED_LEN];
 
+pub type VoteTopicIDBytes = [u8; VOTE_TOPIC_ID_LEN];
+pub type VoteStakeWeightBytes = [u8; VOTE_STAKE_WEIGHT_LEN];
+pub type VoteTypeBytes = [u8; VOTE_TYPE_LEN];
+pub type VoteUniqIDBytes = [u8; VOTE_UNIQ_ID_LEN];
+
 /// Measured in days past the epoch.
 ///
 /// Clients should check that this is within a day of the current date.
@@ -44,9 +49,31 @@ pub fn encode_redemption_time(redemption_time: u32) -> Scalar {
     Scalar::from_bytes_mod_order(scalar_bytes)
 }
 
-pub fn encode_receipt_serial_bytes(receipt_serial_bytes: ReceiptSerialBytes) -> Scalar {
+pub fn encode_vote_bytes(vote_bytes: VoteTypeBytes) -> Scalar {
+    assert_eq!(vote_bytes.len(), 1); // should be less than eq 32
     let mut scalar_bytes: [u8; 32] = Default::default();
-    scalar_bytes[0..16].copy_from_slice(&receipt_serial_bytes[..]);
+    scalar_bytes[0..1].copy_from_slice(&vote_bytes[..]);
+    Scalar::from_bytes_mod_order(scalar_bytes)
+}
+
+pub fn encode_vote_id(vote_id: VoteUniqIDBytes) -> Scalar {
+    assert_eq!(vote_id.len(), 32); // should be less than eq 32
+    let mut scalar_bytes: [u8; 32] = Default::default();
+    scalar_bytes[0..VOTE_UNIQ_ID_LEN].copy_from_slice(&vote_id[..]);
+    Scalar::from_bytes_mod_order(scalar_bytes)
+}
+
+pub fn encode_vote_stake_weight(stake_weight: VoteStakeWeightBytes) -> Scalar {
+    assert_eq!(stake_weight.len(), 32); // should be less than eq 32
+    let mut scalar_bytes: [u8; 32] = Default::default();
+    scalar_bytes[0..VOTE_STAKE_WEIGHT_LEN].copy_from_slice(&stake_weight[..]);
+    Scalar::from_bytes_mod_order(scalar_bytes)
+}
+
+pub fn encode_vote_topic_id(topic_id: VoteTopicIDBytes) -> Scalar {
+    assert_eq!(topic_id.len(), 16); // should be less than eq 32
+    let mut scalar_bytes: [u8; 32] = Default::default();
+    scalar_bytes[0..VOTE_TOPIC_ID_LEN].copy_from_slice(&topic_id[..]);
     Scalar::from_bytes_mod_order(scalar_bytes)
 }
 

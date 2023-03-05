@@ -15,7 +15,7 @@ use crate::common::sho::*;
 use crate::common::simple_types::*;
 use crate::crypto::uid_struct;
 use crate::crypto::{
-    auth_credential_request, vote_credential_request
+    auth_credential_request, vote_credential_request, auth_credential_commitment,
 };
 
 use crate::{
@@ -175,6 +175,38 @@ pub(crate) fn convert_to_points_uid_struct(
     let system = SystemParams::get_hardcoded();
     let redemption_time_scalar = encode_redemption_time(redemption_time);
     vec![uid.M1, uid.M2, redemption_time_scalar * system.G_m3]
+}
+
+pub(crate) fn convert_to_point_vote_type(
+    vote_type: VoteTypeBytes,
+) -> RistrettoPoint {
+    let system = SystemParams::get_hardcoded();
+    let vote_scalar = encode_vote_bytes(vote_type);
+    vote_scalar * system.G_m1
+}
+
+pub(crate) fn convert_to_point_vote_id(
+    vote_id: VoteUniqIDBytes,
+) -> RistrettoPoint {
+    let system = SystemParams::get_hardcoded();
+    let vote_scalar = encode_vote_id(vote_id);
+    vote_scalar * system.G_m2
+}
+
+pub(crate) fn convert_to_point_vote_stake_weight(
+    stake_weight: VoteStakeWeightBytes,
+) -> RistrettoPoint {
+    let system = SystemParams::get_hardcoded();
+    let vote_scalar = encode_vote_id(stake_weight);
+    vote_scalar * system.G_m3
+}
+
+pub(crate) fn convert_to_point_vote_topic_id(
+    topic_id: VoteTopicIDBytes,
+) -> RistrettoPoint {
+    let system = SystemParams::get_hardcoded();
+    let vote_scalar = encode_vote_topic_id(topic_id);
+    vote_scalar * system.G_m4
 }
 
 impl SystemParams {
@@ -371,12 +403,21 @@ impl KeyPair<AuthCredential> {
 impl KeyPair<VoteCredential> {
     pub fn create_blinded_vote_credential(
         &self,
-        uid: uid_struct::UidStruct, // TODO
         public_key: vote_credential_request::PublicKey,
         ciphertext: vote_credential_request::Ciphertext,
         sho: &mut Sho,
+        stake_weight: VoteStakeWeightBytes,
+        topic_id: VoteTopicIDBytes,
+        auth_commitment: auth_credential_commitment::Commitment,
     ) -> BlindedVoteCredentialWithSecretNonce {
-        let M = [uid.M1, uid.M2];
+
+        let M = [
+            convert_to_point_vote_stake_weight(stake_weight),
+            convert_to_point_vote_topic_id(topic_id),
+            auth_commitment.J1,
+            auth_commitment.J2,
+            auth_commitment.J3,
+        ];
 
         let (t, U, Vprime) = self.credential_core(&M, sho);
         let rprime = sho.get_scalar();
