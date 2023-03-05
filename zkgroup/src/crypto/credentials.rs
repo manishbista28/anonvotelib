@@ -19,8 +19,7 @@ use crate::crypto::{
 };
 
 use crate::{
-    NUM_AUTH_CRED_ATTRIBUTES, NUM_PROFILE_KEY_CRED_ATTRIBUTES, CoarseRedemptionTime, 
-    // NUM_PROFILE_KEY_CRED_ATTRIBUTES, NUM_RECEIPT_CRED_ATTRIBUTES,
+    NUM_AUTH_CRED_ATTRIBUTES, NUM_VOTES_ATTRIBUTES, CoarseRedemptionTime, 
 };
 
 use lazy_static::lazy_static;
@@ -71,8 +70,8 @@ impl AttrScalars for AuthCredential {
 
 impl AttrScalars for VoteCredential { //TODO
     // Store four scalars for backwards compatibility.
-    type Storage = [Scalar; 4];
-    const NUM_ATTRS: usize = NUM_PROFILE_KEY_CRED_ATTRIBUTES;
+    type Storage = [Scalar; 5];
+    const NUM_ATTRS: usize = NUM_VOTES_ATTRIBUTES;
 }
 
 #[derive(Serialize, Deserialize)]
@@ -207,6 +206,27 @@ pub(crate) fn convert_to_point_vote_topic_id(
     let system = SystemParams::get_hardcoded();
     let vote_scalar = encode_vote_topic_id(topic_id);
     vote_scalar * system.G_m4
+}
+
+pub(crate) fn convert_to_point_auth_commitment(
+    auth_commitment: auth_credential_commitment::Commitment,
+) -> RistrettoPoint {
+    let mut combined_vec = Vec::<u8>::with_capacity(160*3);
+    let mut enc_j1 = bincode::serialize(&auth_commitment.J1).unwrap();
+    let mut enc_j2 = bincode::serialize(&auth_commitment.J2).unwrap();
+    let mut enc_j3 = bincode::serialize(&auth_commitment.J3).unwrap();
+    combined_vec.append(&mut enc_j1);
+    combined_vec.append(&mut enc_j2);
+    combined_vec.append(&mut enc_j3);
+    let mut sho = Sho::new(
+        b"Signal_ZKGroup_20200424_Random_Commitment_Generate",
+        &combined_vec,
+    );
+    let mut point_bytes = [0u8; 32];
+    point_bytes.copy_from_slice(&sho.squeeze(32)[..]);
+    let vote_scalar =  Scalar::from_bytes_mod_order(point_bytes);
+    let system = SystemParams::get_hardcoded();
+    vote_scalar * system.G_m5
 }
 
 impl SystemParams {
@@ -414,9 +434,7 @@ impl KeyPair<VoteCredential> {
         let M = [
             convert_to_point_vote_stake_weight(stake_weight),
             convert_to_point_vote_topic_id(topic_id),
-            auth_commitment.J1,
-            auth_commitment.J2,
-            auth_commitment.J3,
+            convert_to_point_auth_commitment(auth_commitment),
         ];
 
         let (t, U, Vprime) = self.credential_core(&M, sho);

@@ -412,6 +412,8 @@ impl VoteCredentialIssuanceProof {
                 ("y1", "G_y1"),
                 ("y2", "G_y2"),
                 ("y3", "G_y3"),
+                ("y4", "G_y4"),
+                ("y5", "G_y5"),
             ],
         );
         st.add("S1", &[("y1", "D1"), ("y2", "E1"), ("rprime", "G")]);
@@ -425,6 +427,8 @@ impl VoteCredentialIssuanceProof {
                 ("x0", "U"),
                 ("x1", "tU"),
                 ("y3", "M3"),
+                ("y4", "M4"),
+                ("y5", "M5"),
             ],
         );
         st
@@ -435,10 +439,12 @@ impl VoteCredentialIssuanceProof {
         request_public_key: vote_credential_request::PublicKey,
         ciphertext: vote_credential_request::Ciphertext,
         blinded_credential: credentials::BlindedVoteCredentialWithSecretNonce,
+        stake_weight: VoteStakeWeightBytes,
+        topic_id: VoteTopicIDBytes,
+        auth_commitment: auth_credential_commitment::Commitment,
         sho: &mut Sho,
     ) -> Self {
-        // let credentials_system = credentials::SystemParams::get_hardcoded();
-        // let redemption_time_scalar = encode_redemption_time(redemption_time);
+        let credentials_system = credentials::SystemParams::get_hardcoded();
 
         let mut scalar_args = poksho::ScalarArgs::new();
         scalar_args.add("w", key_pair.w);
@@ -448,28 +454,38 @@ impl VoteCredentialIssuanceProof {
         scalar_args.add("y1", key_pair.y[1]);
         scalar_args.add("y2", key_pair.y[2]);
         scalar_args.add("y3", key_pair.y[3]);
+        scalar_args.add("y4", key_pair.y[4]);
+        scalar_args.add("y5", key_pair.y[5]);
         scalar_args.add("rprime", blinded_credential.rprime);
 
+        let M3 = credentials::convert_to_point_vote_stake_weight(stake_weight);
+        let M4 = credentials::convert_to_point_vote_topic_id(topic_id);
+        let M5 = credentials::convert_to_point_auth_commitment(auth_commitment);
+
         let mut point_args = poksho::PointArgs::new();
-        // point_args.add("C_W", key_pair.C_W);
-        // point_args.add("G_w", credentials_system.G_w);
-        // point_args.add("G_wprime", credentials_system.G_wprime);
-        // point_args.add("G_V-I", credentials_system.G_V - key_pair.I);
-        // point_args.add("G_x0", credentials_system.G_x0);
-        // point_args.add("G_x1", credentials_system.G_x1);
-        // point_args.add("G_y1", credentials_system.G_y[1]);
-        // point_args.add("G_y2", credentials_system.G_y[2]);
-        // point_args.add("G_y3", credentials_system.G_y[3]);
-        // point_args.add("S1", blinded_credential.S1);
-        // point_args.add("D1", request.D1);
-        // point_args.add("E1", request.E1);
-        // point_args.add("S2", blinded_credential.S2);
-        // point_args.add("D2", request.D2);
-        // point_args.add("E2", request.E2);
-        // point_args.add("Y", request_public_key.Y);
-        // point_args.add("U", blinded_credential.U);
-        // point_args.add("tU", blinded_credential.t * blinded_credential.U);
-        // point_args.add("M3", redemption_time_scalar * credentials_system.G_m2);
+        point_args.add("C_W", key_pair.C_W);
+        point_args.add("G_w", credentials_system.G_w);
+        point_args.add("G_wprime", credentials_system.G_wprime);
+        point_args.add("G_V-I", credentials_system.G_V - key_pair.I);
+        point_args.add("G_x0", credentials_system.G_x0);
+        point_args.add("G_x1", credentials_system.G_x1);
+        point_args.add("G_y1", credentials_system.G_y[1]);
+        point_args.add("G_y2", credentials_system.G_y[2]);
+        point_args.add("G_y3", credentials_system.G_y[3]);
+        point_args.add("G_y4", credentials_system.G_y[4]);
+        point_args.add("G_y5", credentials_system.G_y[5]);
+        point_args.add("S1", blinded_credential.S1);
+        point_args.add("D1", ciphertext.D1);
+        point_args.add("E1", ciphertext.E1);
+        point_args.add("S2", blinded_credential.S2);
+        point_args.add("D2", ciphertext.D2);
+        point_args.add("E2", ciphertext.E2);
+        point_args.add("Y", request_public_key.Y);
+        point_args.add("U", blinded_credential.U);
+        point_args.add("tU", blinded_credential.t * blinded_credential.U);
+        point_args.add("M3", M3);
+        point_args.add("M3", M4);
+        point_args.add("M3", M5);
 
 
         let poksho_proof = Self::get_poksho_statement()
@@ -485,36 +501,43 @@ impl VoteCredentialIssuanceProof {
 
     pub fn verify(
         &self,
-        // credentials_public_key: credentials::PublicKey,
-        // request_public_key: auth_credential_request::PublicKey,
-        // request: auth_credential_request::Ciphertext,
-        // blinded_credential: credentials::BlindedAuthCredential,
-        // redemption_time: CoarseRedemptionTime,
+        credentials_public_key: credentials::PublicKey,
+        request_public_key: vote_credential_request::PublicKey,
+        ciphertext: vote_credential_request::Ciphertext,
+        blinded_credential: credentials::BlindedVoteCredential,
+        stake_weight: VoteStakeWeightBytes,
+        topic_id: VoteTopicIDBytes,
+        auth_commitment: auth_credential_commitment::Commitment,
     ) -> Result<(), ZkGroupVerificationFailure> {
-        // let credentials_system = credentials::SystemParams::get_hardcoded();
-        // let redemption_time_scalar = encode_redemption_time(redemption_time);
+        let credentials_system = credentials::SystemParams::get_hardcoded();
+        let M3 = credentials::convert_to_point_vote_stake_weight(stake_weight);
+        let M4 = credentials::convert_to_point_vote_topic_id(topic_id);
+        let M5 = credentials::convert_to_point_auth_commitment(auth_commitment);
 
         let mut point_args = poksho::PointArgs::new();
-        // point_args.add("C_W", credentials_public_key.C_W);
-        // point_args.add("G_w", credentials_system.G_w);
-        // point_args.add("G_wprime", credentials_system.G_wprime);
-        // point_args.add("G_V-I", credentials_system.G_V - credentials_public_key.I);
-        // point_args.add("G_x0", credentials_system.G_x0);
-        // point_args.add("G_x1", credentials_system.G_x1);
-        // point_args.add("G_y1", credentials_system.G_y[1]);
-        // point_args.add("G_y2", credentials_system.G_y[2]);
-        // point_args.add("G_y3", credentials_system.G_y[3]);
-        // point_args.add("S1", blinded_credential.S1);
-        // point_args.add("D1", request.D1);
-        // point_args.add("E1", request.E1);
-        // point_args.add("S2", blinded_credential.S2);
-        // point_args.add("D2", request.D2);
-        // point_args.add("E2", request.E2);
-        // point_args.add("Y", request_public_key.Y);
-        // point_args.add("U", blinded_credential.U);
-        // point_args.add("tU", blinded_credential.t * blinded_credential.U);
-        // point_args.add("M3", redemption_time_scalar * credentials_system.G_m2);
-
+        point_args.add("C_W", credentials_public_key.C_W);
+        point_args.add("G_w", credentials_system.G_w);
+        point_args.add("G_wprime", credentials_system.G_wprime);
+        point_args.add("G_V-I", credentials_system.G_V - credentials_public_key.I);
+        point_args.add("G_x0", credentials_system.G_x0);
+        point_args.add("G_x1", credentials_system.G_x1);
+        point_args.add("G_y1", credentials_system.G_y[1]);
+        point_args.add("G_y2", credentials_system.G_y[2]);
+        point_args.add("G_y3", credentials_system.G_y[3]);
+        point_args.add("G_y4", credentials_system.G_y[4]);
+        point_args.add("G_y5", credentials_system.G_y[5]);
+        point_args.add("S1", blinded_credential.S1);
+        point_args.add("D1", ciphertext.D1);
+        point_args.add("E1", ciphertext.E1);
+        point_args.add("S2", blinded_credential.S2);
+        point_args.add("D2", ciphertext.D2);
+        point_args.add("E2", ciphertext.E2);
+        point_args.add("Y", request_public_key.Y);
+        point_args.add("U", blinded_credential.U);
+        point_args.add("tU", blinded_credential.t * blinded_credential.U);
+        point_args.add("M3", M3);
+        point_args.add("M3", M4);
+        point_args.add("M3", M5);
 
         match Self::get_poksho_statement().verify_proof(&self.poksho_proof, &point_args, &[]) {
             Err(_) => Err(ZkGroupVerificationFailure),

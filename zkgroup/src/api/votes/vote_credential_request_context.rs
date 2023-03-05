@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize)]
 pub struct VoteCredentialRequestContext {
     pub(crate) reserved: ReservedBytes,
+    pub(crate) vote_type: VoteTypeBytes,
+    pub(crate) vote_id: VoteUniqIDBytes,
     pub(crate) stake_weight: VoteStakeWeightBytes,
     pub(crate) topic_id: VoteTopicIDBytes,
     pub(crate) key_pair: crypto::vote_credential_request::KeyPair,

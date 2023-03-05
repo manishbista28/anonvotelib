@@ -25,6 +25,7 @@ impl UidStruct {
         let mut sho = Sho::new(b"Signal_ZKGroup_20200424_UID_CalcM1", &uid_bytes);
         let M1 = sho.get_point();
         let M2 = RistrettoPoint::lizard_encode::<Sha256>(&uid_bytes);
+
         UidStruct {
             bytes: uid_bytes,
             M1,
