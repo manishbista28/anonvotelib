@@ -6,7 +6,7 @@
 pub const NUM_AUTH_CRED_ATTRIBUTES: usize = 3;
 pub const NUM_PROFILE_KEY_CRED_ATTRIBUTES: usize = 4;
 pub const NUM_RECEIPT_CRED_ATTRIBUTES: usize = 2;
-pub const NUM_VOTES_ATTRIBUTES: usize = 5;
+pub const NUM_VOTES_ATTRIBUTES: usize = 4;
 
 pub const PRESENTATION_VERSION_1: u8 = 0;
 pub const PRESENTATION_VERSION_2: u8 = 1;

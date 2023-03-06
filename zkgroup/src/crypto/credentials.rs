@@ -70,7 +70,7 @@ impl AttrScalars for AuthCredential {
 
 impl AttrScalars for VoteCredential { //TODO
     // Store four scalars for backwards compatibility.
-    type Storage = [Scalar; 5];
+    type Storage = [Scalar; 4];
     const NUM_ATTRS: usize = NUM_VOTES_ATTRIBUTES;
 }
 
@@ -207,7 +207,7 @@ pub(crate) fn convert_to_point_vote_topic_id(
     let vote_scalar = encode_vote_topic_id(topic_id);
     vote_scalar * system.G_m4
 }
-
+/*
 pub(crate) fn convert_to_point_auth_commitment(
     auth_commitment: auth_credential_commitment::Commitment,
 ) -> RistrettoPoint {
@@ -228,6 +228,7 @@ pub(crate) fn convert_to_point_auth_commitment(
     let system = SystemParams::get_hardcoded();
     vote_scalar * system.G_m5
 }
+ */
 
 impl SystemParams {
     #[cfg(test)]
@@ -428,13 +429,11 @@ impl KeyPair<VoteCredential> {
         sho: &mut Sho,
         stake_weight: VoteStakeWeightBytes,
         topic_id: VoteTopicIDBytes,
-        auth_commitment: auth_credential_commitment::Commitment,
     ) -> BlindedVoteCredentialWithSecretNonce {
 
         let M = [
             convert_to_point_vote_stake_weight(stake_weight),
             convert_to_point_vote_topic_id(topic_id),
-            convert_to_point_auth_commitment(auth_commitment),
         ];
 
         let (t, U, Vprime) = self.credential_core(&M, sho);

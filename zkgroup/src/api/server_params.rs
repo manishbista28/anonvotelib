@@ -134,7 +134,6 @@ impl ServerSecretParams {
         request: &api::votes::VoteCredentialRequest,
         vote_topic: VoteTopicIDBytes,
         group_public_params: api::groups::GroupPublicParams,
-        auth_commitment: crypto::auth_credential_commitment::Commitment,
     ) -> Result<api::votes::VoteCredentialResponse, ZkGroupVerificationFailure> {
         let mut sho = Sho::new(
             b"Signal_ZKGroup_20200424_Random_ServerSecretParams_IssueAuthCredential",
@@ -158,7 +157,7 @@ impl ServerSecretParams {
                 &mut sho, 
                 request.stake_weight, 
                 request.topic_id, 
-                auth_commitment);
+            );
 
         let proof = crypto::proofs::VoteCredentialIssuanceProof::new(
             self.vote_credentials_key_pair,
@@ -167,7 +166,6 @@ impl ServerSecretParams {
             blinded_credential_with_secret_nonce,
             request.stake_weight,
             request.topic_id,
-            auth_commitment,
             & mut sho
         );
         Ok(api::votes::VoteCredentialResponse {
@@ -335,7 +333,6 @@ impl ServerPublicParams {
         &self,
         request: &api::votes::VoteCredentialRequestContext,
         response: &api::votes::VoteCredentialResponse,
-        auth_commitment: crypto::auth_credential_commitment::Commitment,
     ) -> Result<api::votes::VoteCredential, ZkGroupVerificationFailure> {
         response.proof.verify(
             self.auth_credentials_public_key,
@@ -344,7 +341,6 @@ impl ServerPublicParams {
             response.blinded_credential,
             request.stake_weight,
             request.topic_id,
-            auth_commitment,
         )?;
 
         let credential = request
@@ -362,7 +358,6 @@ impl ServerPublicParams {
             vote_id,
             stake_weight,
             topic_id,
-            auth_commitment,
         })
     }
 

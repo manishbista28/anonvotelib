@@ -413,7 +413,6 @@ impl VoteCredentialIssuanceProof {
                 ("y2", "G_y2"),
                 ("y3", "G_y3"),
                 ("y4", "G_y4"),
-                ("y5", "G_y5"),
             ],
         );
         st.add("S1", &[("y1", "D1"), ("y2", "E1"), ("rprime", "G")]);
@@ -428,7 +427,6 @@ impl VoteCredentialIssuanceProof {
                 ("x1", "tU"),
                 ("y3", "M3"),
                 ("y4", "M4"),
-                ("y5", "M5"),
             ],
         );
         st
@@ -441,7 +439,6 @@ impl VoteCredentialIssuanceProof {
         blinded_credential: credentials::BlindedVoteCredentialWithSecretNonce,
         stake_weight: VoteStakeWeightBytes,
         topic_id: VoteTopicIDBytes,
-        auth_commitment: auth_credential_commitment::Commitment,
         sho: &mut Sho,
     ) -> Self {
         let credentials_system = credentials::SystemParams::get_hardcoded();
@@ -455,12 +452,10 @@ impl VoteCredentialIssuanceProof {
         scalar_args.add("y2", key_pair.y[2]);
         scalar_args.add("y3", key_pair.y[3]);
         scalar_args.add("y4", key_pair.y[4]);
-        scalar_args.add("y5", key_pair.y[5]);
         scalar_args.add("rprime", blinded_credential.rprime);
 
         let M3 = credentials::convert_to_point_vote_stake_weight(stake_weight);
         let M4 = credentials::convert_to_point_vote_topic_id(topic_id);
-        let M5 = credentials::convert_to_point_auth_commitment(auth_commitment);
 
         let mut point_args = poksho::PointArgs::new();
         point_args.add("C_W", key_pair.C_W);
@@ -473,7 +468,6 @@ impl VoteCredentialIssuanceProof {
         point_args.add("G_y2", credentials_system.G_y[2]);
         point_args.add("G_y3", credentials_system.G_y[3]);
         point_args.add("G_y4", credentials_system.G_y[4]);
-        point_args.add("G_y5", credentials_system.G_y[5]);
         point_args.add("S1", blinded_credential.S1);
         point_args.add("D1", ciphertext.D1);
         point_args.add("E1", ciphertext.E1);
@@ -484,8 +478,7 @@ impl VoteCredentialIssuanceProof {
         point_args.add("U", blinded_credential.U);
         point_args.add("tU", blinded_credential.t * blinded_credential.U);
         point_args.add("M3", M3);
-        point_args.add("M3", M4);
-        point_args.add("M3", M5);
+        point_args.add("M4", M4);
 
 
         let poksho_proof = Self::get_poksho_statement()
@@ -507,12 +500,10 @@ impl VoteCredentialIssuanceProof {
         blinded_credential: credentials::BlindedVoteCredential,
         stake_weight: VoteStakeWeightBytes,
         topic_id: VoteTopicIDBytes,
-        auth_commitment: auth_credential_commitment::Commitment,
     ) -> Result<(), ZkGroupVerificationFailure> {
         let credentials_system = credentials::SystemParams::get_hardcoded();
         let M3 = credentials::convert_to_point_vote_stake_weight(stake_weight);
         let M4 = credentials::convert_to_point_vote_topic_id(topic_id);
-        let M5 = credentials::convert_to_point_auth_commitment(auth_commitment);
 
         let mut point_args = poksho::PointArgs::new();
         point_args.add("C_W", credentials_public_key.C_W);
@@ -525,7 +516,6 @@ impl VoteCredentialIssuanceProof {
         point_args.add("G_y2", credentials_system.G_y[2]);
         point_args.add("G_y3", credentials_system.G_y[3]);
         point_args.add("G_y4", credentials_system.G_y[4]);
-        point_args.add("G_y5", credentials_system.G_y[5]);
         point_args.add("S1", blinded_credential.S1);
         point_args.add("D1", ciphertext.D1);
         point_args.add("E1", ciphertext.E1);
@@ -536,8 +526,7 @@ impl VoteCredentialIssuanceProof {
         point_args.add("U", blinded_credential.U);
         point_args.add("tU", blinded_credential.t * blinded_credential.U);
         point_args.add("M3", M3);
-        point_args.add("M3", M4);
-        point_args.add("M3", M5);
+        point_args.add("M4", M4);
 
         match Self::get_poksho_statement().verify_proof(&self.poksho_proof, &point_args, &[]) {
             Err(_) => Err(ZkGroupVerificationFailure),
