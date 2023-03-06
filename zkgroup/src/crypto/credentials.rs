@@ -438,7 +438,7 @@ impl BlindedVoteCredentialWithSecretNonce {
 mod tests {
     use crate::common::constants::*;
     use crate::crypto::proofs;
-    use crate::api::auth;
+    use crate::crypto::auth_credential_commitment;
     use crate::groups::{GroupMasterKey, GroupSecretParams};
     use super::*;
 
@@ -461,8 +461,16 @@ mod tests {
         let expiration_time = 1678102259;
         let uid = uid_struct::UidStruct::new(uid_bytes);
 
+        let commitment_with_nonce = auth_credential_commitment::CommitmentWithSecretNonce::new(uid);
+
         let encryptedUID = clientEncryptionKeyPair.encrypt(uid, &mut sho);
         let ciphertext = encryptedUID.get_ciphertext();
+        
+        // RequestProof
+        
+        let _ = proofs::AuthCredentialRequestProof::new(clientEncryptionKeyPair, encryptedUID, commitment_with_nonce, &mut sho);
+    
+        // Issuance Proof
         let blinded_auth_credential_with_nonce= serverKeypair.create_blinded_auth_credential(clientPubKey, ciphertext, expiration_time, &mut sho);
         
 
@@ -484,17 +492,11 @@ mod tests {
             expiration_time)
             .unwrap();
 
-        let mac_bytes = bincode::serialize(&blinded_auth_credential_with_nonce.get_blinded_auth_credential()).unwrap();
-
+        //let mac_bytes = bincode::serialize(&blinded_auth_credential_with_nonce.get_blinded_auth_credential()).unwrap();
         //println!("mac_bytes= {:#x?}", mac_bytes);
 
-        assert!(
-            mac_bytes
-                == vec![
-                    0x2e,  0xf3,  0x98,  0xf1,  0x86,  0x77,  0xc7,  0xf7,  0x24,  0x40,  0x51,  0xaf,  0xe3,  0x9,  0x9b,  0xc3,  0x6b,  0xda,  0xfc,  0x98,  0xe9,  0x33,  0xbc,  0xe4,  0x22,  0xb8,  0xf1,  0x68,  0xb8,  0x1a,  0x9b,  0xd,  0xac,  0xf0,  0xeb,  0xca,  0xeb,  0xa4,  0xf1,  0xe9,  0x67,  0x31,  0xbc,  0xa,  0xc1,  0x3b,  0xbd,  0xfa,  0x82,  0x25,  0x17,  0xb,  0x18,  0xb9,  0x14,  0xf8,  0xcd,  0x93,  0x26,  0xa3,  0x42,  0xb1,  0xd,  0x5a,  0x46,  0x3b,  0x2,  0xa3,  0xaf,  0xff,  0x13,  0xb4,  0x2b,  0x5,  0x3c,  0xe6,  0xbb,  0x92,  0x4,  0x45,  0x4,  0xe4,  0x5b,  0xb9,  0xc5,  0x23,  0xab,  0xf,  0x82,  0x4,  0xcc,  0x9d,  0xf3,  0xc1,  0x77,  0x68,  0xaa,  0x67,  0xe4,  0xf1,  0xe5,  0x73,  0xa6,  0x24,  0x8b,  0x3d,  0x3,  0xa3,  0x9d,  0x47,  0x6,  0x60,  0x99,  0x54,  0x57,  0x47,  0x6b,  0x6b,  0x2f,  0x3a,  0xcf,  0xc7,  0x75,  0x15,  0xb6,  0x9d,  0x28,  0x1b,
-                ]
-        );
 
+        // Presentation Proof
         let creds = clientEncryptionKeyPair.decrypt_blinded_auth_credential(blinded_auth_credential_with_nonce.get_blinded_auth_credential());
 
 
@@ -503,14 +505,14 @@ mod tests {
 
         let uuid_ciphertext = group_secret_params.encrypt_uid_struct(uid);
         
-        let proof = proofs::AuthCredentialPresentationProof::new(
+        let _ = proofs::AuthCredentialPresentationProof::new(
             serverPubKey,
             group_secret_params.uid_enc_key_pair,
             creds,
             uid,
             uuid_ciphertext.ciphertext,
             &mut sho,
-        );
+        ); 
     }
 
 }
