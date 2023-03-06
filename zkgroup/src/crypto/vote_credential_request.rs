@@ -65,8 +65,8 @@ impl KeyPair {
         sho: &mut Sho,
     ) -> CiphertextWithSecretNonce {
         
-        let type_pt = credentials::convert_to_point_vote_type(vote_type);
-        let id_pt = credentials::convert_to_point_vote_id(vote_id);
+        let M3 = credentials::convert_to_point_vote_type(vote_type);
+        let M4 = credentials::convert_to_point_vote_id(vote_id);
 
         let rX = sho.get_scalar();
         let rY = sho.get_scalar();
@@ -74,8 +74,8 @@ impl KeyPair {
         let DX = rX * RISTRETTO_BASEPOINT_POINT;
         let EX = rX * RISTRETTO_BASEPOINT_POINT;
 
-        let DY = rX * (self.Y) + type_pt;
-        let EY = rX * (self.Y) + id_pt;
+        let DY = rX * (self.Y) + M3;
+        let EY = rX * (self.Y) + M4;
 
         CiphertextWithSecretNonce {
             rX,

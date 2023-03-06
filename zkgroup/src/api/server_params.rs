@@ -368,10 +368,6 @@ impl ServerPublicParams {
         let proof = crypto::proofs::VoteCredentialPresentationProof::new(
             self.vote_credentials_public_key,
             response.credential,
-            response.vote_type,
-            response.vote_id,
-            response.stake_weight,
-            response.topic_id,
             &mut sho,
         );
         let vtype = response.vote_type.clone();

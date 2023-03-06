@@ -432,18 +432,18 @@ impl VoteCredentialIssuanceProof {
                 ("y4", "G_y4"),
             ],
         );
-        st.add("SX", &[("y1", "DX"), ("y2", "EX"), ("rprime", "G")]);
+        st.add("SX", &[("y3", "DX"), ("y4", "EX"), ("rprime", "G")]);
         st.add(
             "SY",
             &[
-                ("y1", "DY"),
-                ("y2", "EY"),
+                ("y3", "DY"),
+                ("y4", "EY"),
                 ("rprime", "Y"),
                 ("w", "G_w"),
                 ("x0", "U"),
                 ("x1", "tU"),
-                ("y3", "M3"),
-                ("y4", "M4"),
+                ("y1", "M1"),
+                ("y2", "M2"),
             ],
         );
         st
@@ -471,8 +471,8 @@ impl VoteCredentialIssuanceProof {
         scalar_args.add("y4", key_pair.y[4]);
         scalar_args.add("rprime", blinded_credential.rprime);
 
-        let M3 = credentials::convert_to_point_vote_stake_weight(stake_weight);
-        let M4 = credentials::convert_to_point_vote_topic_id(topic_id);
+        let M1 = credentials::convert_to_point_vote_stake_weight(stake_weight);
+        let M2 = credentials::convert_to_point_vote_topic_id(topic_id);
 
         let mut point_args = poksho::PointArgs::new();
         point_args.add("C_W", key_pair.C_W);
@@ -494,8 +494,8 @@ impl VoteCredentialIssuanceProof {
         point_args.add("Y", request_public_key.Y);
         point_args.add("U", blinded_credential.U);
         point_args.add("tU", blinded_credential.t * blinded_credential.U);
-        point_args.add("M3", M3);
-        point_args.add("M4", M4);
+        point_args.add("M1", M1);
+        point_args.add("M2", M2);
 
 
         let poksho_proof = Self::get_poksho_statement()
@@ -519,8 +519,8 @@ impl VoteCredentialIssuanceProof {
         topic_id: VoteTopicIDBytes,
     ) -> Result<(), ZkGroupVerificationFailure> {
         let credentials_system = credentials::SystemParams::get_hardcoded();
-        let M3 = credentials::convert_to_point_vote_stake_weight(stake_weight);
-        let M4 = credentials::convert_to_point_vote_topic_id(topic_id);
+        let M1 = credentials::convert_to_point_vote_stake_weight(stake_weight);
+        let M2 = credentials::convert_to_point_vote_topic_id(topic_id);
 
         let mut point_args = poksho::PointArgs::new();
         point_args.add("C_W", credentials_public_key.C_W);
@@ -542,8 +542,8 @@ impl VoteCredentialIssuanceProof {
         point_args.add("Y", request_public_key.Y);
         point_args.add("U", blinded_credential.U);
         point_args.add("tU", blinded_credential.t * blinded_credential.U);
-        point_args.add("M3", M3);
-        point_args.add("M4", M4);
+        point_args.add("M1", M1);
+        point_args.add("M2", M2);
 
         match Self::get_poksho_statement().verify_proof(&self.poksho_proof, &point_args, &[]) {
             Err(_) => Err(ZkGroupVerificationFailure),
@@ -568,14 +568,9 @@ impl VoteCredentialPresentationProof {
     pub fn new(
         credentials_public_key: credentials::PublicKey,
         credential: credentials::VoteCredential,
-        vote_type: VoteTypeBytes,
-        vote_id: VoteUniqIDBytes,
-        stake_weight: VoteStakeWeightBytes,
-        topic_id: VoteTopicIDBytes,
         sho: &mut Sho,
     ) -> Self {
         let credentials_system = credentials::SystemParams::get_hardcoded();
-        let uid_system = uid_encryption::SystemParams::get_hardcoded();
 
         let z = sho.get_scalar();
 
@@ -669,10 +664,11 @@ impl VoteCredentialPresentationProof {
             ..
         } = credentials_key_pair;
 
-        let M1 = credentials::convert_to_point_vote_type(vote_type);
-        let M2 = credentials::convert_to_point_vote_id(vote_id);
-        let M3 = credentials::convert_to_point_vote_stake_weight(stake_weight);
-        let M4 = credentials::convert_to_point_vote_topic_id(topic_id);
+        let M1 = credentials::convert_to_point_vote_stake_weight(stake_weight);
+        let M2 = credentials::convert_to_point_vote_topic_id(topic_id);
+        let M3 = credentials::convert_to_point_vote_type(vote_type);
+        let M4 = credentials::convert_to_point_vote_id(vote_id);
+
         
         let Z = C_V - W - x0 * C_x0 - x1 * C_x1 - (y1 * (C_y1 + M1)) - (y2 * (C_y2 + M2))- (y3 * (C_y3 + M3)) - (y4 * (C_y4 + M4));
 

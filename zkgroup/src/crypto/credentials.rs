@@ -161,7 +161,7 @@ pub struct BlindedVoteCredential {
     pub(crate) SX: RistrettoPoint,
     pub(crate) SY: RistrettoPoint,
 }
-
+/*
 pub(crate) fn convert_to_points_uid_struct(
     uid: uid_struct::UidStruct,
     expiration_time: u64,
@@ -170,29 +170,14 @@ pub(crate) fn convert_to_points_uid_struct(
     let expiration_time_scalar = encode_timestamp(expiration_time);
     vec![expiration_time_scalar * system.G_m1, uid.M2, uid.M3]
 }
-
-pub(crate) fn convert_to_point_vote_type(
-    vote_type: VoteTypeBytes,
-) -> RistrettoPoint {
-    let system = SystemParams::get_hardcoded();
-    let vote_scalar = encode_vote_bytes(vote_type);
-    vote_scalar * system.G_m1
-}
-
-pub(crate) fn convert_to_point_vote_id(
-    vote_id: VoteUniqIDBytes,
-) -> RistrettoPoint {
-    let system = SystemParams::get_hardcoded();
-    let vote_scalar = encode_vote_id(vote_id);
-    vote_scalar * system.G_m2
-}
+*/
 
 pub(crate) fn convert_to_point_vote_stake_weight(
     stake_weight: VoteStakeWeightBytes,
 ) -> RistrettoPoint {
     let system = SystemParams::get_hardcoded();
     let vote_scalar = encode_vote_id(stake_weight);
-    vote_scalar * system.G_m3
+    vote_scalar * system.G_m1
 }
 
 pub(crate) fn convert_to_point_vote_topic_id(
@@ -200,8 +185,25 @@ pub(crate) fn convert_to_point_vote_topic_id(
 ) -> RistrettoPoint {
     let system = SystemParams::get_hardcoded();
     let vote_scalar = encode_vote_topic_id(topic_id);
+    vote_scalar * system.G_m2
+}
+
+pub(crate) fn convert_to_point_vote_type(
+    vote_type: VoteTypeBytes,
+) -> RistrettoPoint {
+    let system = SystemParams::get_hardcoded();
+    let vote_scalar = encode_vote_bytes(vote_type);
+    vote_scalar * system.G_m3
+}
+
+pub(crate) fn convert_to_point_vote_id(
+    vote_id: VoteUniqIDBytes,
+) -> RistrettoPoint {
+    let system = SystemParams::get_hardcoded();
+    let vote_scalar = encode_vote_id(vote_id);
     vote_scalar * system.G_m4
 }
+
 /*
 pub(crate) fn convert_to_point_auth_commitment(
     auth_commitment: auth_credential_commitment::Commitment,
@@ -391,8 +393,8 @@ impl KeyPair<VoteCredential> {
     ) -> BlindedVoteCredentialWithSecretNonce {
 
         let M = [
-            convert_to_point_vote_stake_weight(stake_weight),
-            convert_to_point_vote_topic_id(topic_id),
+            convert_to_point_vote_stake_weight(stake_weight), // M1
+            convert_to_point_vote_topic_id(topic_id),         // M2
         ];
 
         let (t, U, Vprime) = self.credential_core(&M, sho);
@@ -450,7 +452,7 @@ mod tests {
     }
 
     #[test]
-    fn test_auth_cred_issuance() {
+    fn test_auth_cred_proofs() {
         let mut sho = Sho::new(b"Test_Credentials", b"");
         let serverKeypair = KeyPair::<AuthCredential>::generate(&mut sho);
         let clientEncryptionKeyPair = auth_credential_request::KeyPair::generate(&mut sho);
@@ -515,4 +517,9 @@ mod tests {
         ); 
     }
 
+
+    #[test]
+    fn test_vote_cred_proofs() {
+
+    }
 }
