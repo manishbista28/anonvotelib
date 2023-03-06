@@ -75,17 +75,17 @@ impl AuthCredentialIssuanceProof {
                 ("y3", "G_y3"),
             ],
         );
-        st.add("S1", &[("y1", "D1"), ("y2", "E1"), ("rprime", "G")]);
+        st.add("S1", &[("y2", "D1"), ("y3", "E1"), ("rprime", "G")]);
         st.add(
             "S2",
             &[
-                ("y1", "D2"),
-                ("y2", "E2"),
+                ("y2", "D2"),
+                ("y3", "E2"),
                 ("rprime", "Y"),
                 ("w", "G_w"),
                 ("x0", "U"),
                 ("x1", "tU"),
-                ("y3", "M3"),
+                ("y1", "M3"),
             ],
         );
         st
