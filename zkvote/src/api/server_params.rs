@@ -32,7 +32,7 @@ pub struct ServerPublicParams {
 impl ServerSecretParams {
     pub fn generate(randomness: RandomnessBytes) -> Self {
         let mut sho = Sho::new(
-            b"Signal_ZKGroup_20200424_Random_ServerSecretParams_Generate",
+            b"LibVote_zkvote_20230306_Random_ServerSecretParams_Generate",
             &randomness,
         );
 
@@ -59,7 +59,7 @@ impl ServerSecretParams {
 
     pub fn sign(&self, randomness: RandomnessBytes, message: &[u8]) -> NotarySignatureBytes {
         let mut sho = Sho::new(
-            b"Signal_ZKGroup_20200424_Random_ServerSecretParams_Sign",
+            b"LibVote_zkvote_20230306_Random_ServerSecretParams_Sign",
             &randomness,
         );
         self.sig_key_pair.sign(message, &mut sho)
@@ -70,10 +70,10 @@ impl ServerSecretParams {
         group_public_params: api::groups::GroupPublicParams,
         presentation: &api::auth::AuthCredentialPresentation,
         current_time_in_seconds: u64,
-    ) -> Result<(), ZkGroupVerificationFailure> {
+    ) -> Result<(), ZkVerificationFailure> {
 
         if current_time_in_seconds > presentation.expiration_time {
-            return Err(ZkGroupVerificationFailure);
+            return Err(ZkVerificationFailure);
         }
 
         presentation.proof.verify(
@@ -87,7 +87,7 @@ impl ServerSecretParams {
     pub fn verify_vote_credential_presentation(
         &self,
         presentation: &api::votes::VoteCredentialPresentation,
-    ) -> Result<(), ZkGroupVerificationFailure> {
+    ) -> Result<(), ZkVerificationFailure> {
 
         // TODO: ensure presentation params are consistent with server params and current operation
         presentation.proof.verify(self.vote_credentials_key_pair,
@@ -104,9 +104,9 @@ impl ServerSecretParams {
         request: &api::auth::AuthCredentialRequest,
         commitment: api::auth::AuthCredentialCommitment,
         credential_expiration_time: u64,
-    ) -> Result<api::auth::AuthCredentialResponse, ZkGroupVerificationFailure> {
+    ) -> Result<api::auth::AuthCredentialResponse, ZkVerificationFailure> {
         let mut sho = Sho::new(
-            b"Signal_ZKGroup_20200424_Random_ServerSecretParams_IssueAuthCredential",
+            b"LibVote_zkvote_20230306_Random_ServerSecretParams_IssueAuthCredential",
             &randomness,
         );
 
@@ -149,9 +149,9 @@ impl ServerSecretParams {
         request: &api::votes::VoteCredentialRequest,
         vote_topic: VoteTopicIDBytes,
         group_public_params: api::groups::GroupPublicParams,
-    ) -> Result<api::votes::VoteCredentialResponse, ZkGroupVerificationFailure> {
+    ) -> Result<api::votes::VoteCredentialResponse, ZkVerificationFailure> {
         let mut sho = Sho::new(
-            b"Signal_ZKGroup_20200424_Random_ServerSecretParams_IssueAuthCredential",
+            b"LibVote_zkvote_20230306_Random_ServerSecretParams_IssueAuthCredential",
             &randomness,
         );
 
@@ -198,7 +198,7 @@ impl ServerPublicParams {
         &self,
         message: &[u8],
         signature: NotarySignatureBytes,
-    ) -> Result<(), ZkGroupVerificationFailure> {
+    ) -> Result<(), ZkVerificationFailure> {
         self.sig_public_key.verify(message, signature)
     }
 
@@ -208,7 +208,7 @@ impl ServerPublicParams {
         uid_bytes: UidBytes,
     ) -> api::auth::AuthCredentialRequestContext {
         let mut sho = Sho::new(
-            b"Signal_ZKGroup_20200424_Random_ServerPublicParams_CreateAuthCredentialRequestContext",
+            b"LibVote_zkvote_20230306_Random_ServerPublicParams_CreateAuthCredentialRequestContext",
             &randomness,
         );
         let uid_struct =
@@ -243,7 +243,7 @@ impl ServerPublicParams {
         client_request: &api::auth::AuthCredentialRequestContext,
         response: &api::auth::AuthCredentialResponse,
         expiration_time: u64,
-    ) -> Result<api::auth::AuthCredential, ZkGroupVerificationFailure> {
+    ) -> Result<api::auth::AuthCredential, ZkVerificationFailure> {
         response.proof.verify(
             self.auth_credentials_public_key,
             client_request.key_pair.get_public_key(),
@@ -266,14 +266,9 @@ impl ServerPublicParams {
 
     pub fn create_auth_credential_presentation(
         &self,
-        randomness: RandomnessBytes,
         group_secret_params: api::groups::GroupSecretParams,
         auth_credential: api::auth::AuthCredential,
     ) -> api::auth::AuthCredentialPresentation {
-        let mut sho = Sho::new(
-            b"Signal_ZKGroup_20220120_Random_ServerPublicParams_CreateAuthCredentialPresentationV2",
-            &randomness,
-        );
         let uid = crypto::uid_struct::UidStruct::new(auth_credential.uid_bytes);
         let uuid_ciphertext = group_secret_params.encrypt_uid_struct(uid);
         
@@ -283,7 +278,6 @@ impl ServerPublicParams {
             auth_credential.credential,
             uid,
             uuid_ciphertext.ciphertext,
-            &mut sho,
         );
 
         api::auth::AuthCredentialPresentation {
@@ -302,7 +296,7 @@ impl ServerPublicParams {
         auth_presentation: api::auth::AuthCredentialPresentation,
     ) -> api::votes::VoteCredentialRequestContext {
         let mut sho = Sho::new(
-            b"Signal_ZKGroup_20200424_Random_ServerPublicParams_CreateAuthCredentialRequestContext",
+            b"LibVote_zkvote_20230306_Random_ServerPublicParams_CreateAuthCredentialRequestContext",
             &randomness,
         );
         let mut vote_id = [0u8; VOTE_UNIQ_ID_LEN];
@@ -326,7 +320,7 @@ impl ServerPublicParams {
         &self,
         request: &api::votes::VoteCredentialRequestContext,
         response: &api::votes::VoteCredentialResponse,
-    ) -> Result<api::votes::VoteCredential, ZkGroupVerificationFailure> {
+    ) -> Result<api::votes::VoteCredential, ZkVerificationFailure> {
         response.proof.verify(
             self.auth_credentials_public_key,
             request.key_pair.get_public_key(),
@@ -361,7 +355,7 @@ impl ServerPublicParams {
         response: api::votes::VoteCredential,
     ) -> api::votes::VoteCredentialPresentation {
         let mut sho = Sho::new(
-            b"Signal_ZKGroup_20220120_Random_ServerPublicParams_CreateAuthCredentialPresentationV2",
+            b"LibVote_zkvote_20230306_Random_ServerPublicParams_CreateAuthCredentialPresentationV2",
             &randomness,
         );
         

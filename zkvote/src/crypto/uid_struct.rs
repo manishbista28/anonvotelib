@@ -22,7 +22,7 @@ pub struct PointDecodeFailure;
 
 impl UidStruct {
     pub fn new(uid_bytes: UidBytes) -> Self {
-        let mut sho = Sho::new(b"Signal_ZKGroup_20200424_UID_CalcM1", &uid_bytes);
+        let mut sho = Sho::new(b"LibVote_zkvote_20230306_UID_CalcM1", &uid_bytes);
         let M2 = sho.get_point();
         let M3 = RistrettoPoint::lizard_encode::<Sha256>(&uid_bytes);
 

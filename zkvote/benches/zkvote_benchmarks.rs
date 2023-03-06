@@ -5,21 +5,21 @@
 
 use criterion::{criterion_group, criterion_main, Criterion};
 
-extern crate zkgroup;
+extern crate zkvote;
 
 fn benchmark_integration_auth(c: &mut Criterion) {
-    // let server_secret_params = zkgroup::ServerSecretParams::generate(zkgroup::TEST_ARRAY_32);
+    // let server_secret_params = zkvote::ServerSecretParams::generate(zkvote::TEST_ARRAY_32);
     // let server_public_params = server_secret_params.get_public_params();
 
-    // let master_key = zkgroup::groups::GroupMasterKey::new(zkgroup::TEST_ARRAY_32_1);
+    // let master_key = zkvote::groups::GroupMasterKey::new(zkvote::TEST_ARRAY_32_1);
     // let group_secret_params =
-    //     zkgroup::groups::GroupSecretParams::derive_from_master_key(master_key);
+    //     zkvote::groups::GroupSecretParams::derive_from_master_key(master_key);
     // let group_public_params = group_secret_params.get_public_params();
 
-    // let uid = zkgroup::TEST_ARRAY_16;
+    // let uid = zkvote::TEST_ARRAY_16;
     // let redemption_time = 123456u32;
 
-    // let randomness = zkgroup::TEST_ARRAY_32_2;
+    // let randomness = zkvote::TEST_ARRAY_32_2;
     // let auth_credential_response =
     //     server_secret_params.issue_auth_credential(randomness, uid, redemption_time);
 
@@ -43,7 +43,7 @@ fn benchmark_integration_auth(c: &mut Criterion) {
     // let plaintext = group_secret_params.decrypt_uuid(uuid_ciphertext).unwrap();
     // assert!(plaintext == uid);
 
-    // let randomness = zkgroup::TEST_ARRAY_32_5;
+    // let randomness = zkvote::TEST_ARRAY_32_5;
 
     // let presentation_v2 = server_public_params.create_auth_credential_presentation_v2(
     //     randomness,

@@ -5,13 +5,13 @@
 
 // use curve25519_dalek::ristretto::RistrettoPoint;
 // use sha2::Sha256;
-// use zkgroup::SECONDS_PER_DAY;
+// use zkvote::SECONDS_PER_DAY;
 
 // #[test]
 // fn test_lizard() {
-//     let p = RistrettoPoint::lizard_encode::<Sha256>(&zkgroup::common::constants::TEST_ARRAY_16);
+//     let p = RistrettoPoint::lizard_encode::<Sha256>(&zkvote::common::constants::TEST_ARRAY_16);
 //     let data_out = p.lizard_decode::<Sha256>();
-//     assert!(data_out.unwrap() == zkgroup::common::constants::TEST_ARRAY_16);
+//     assert!(data_out.unwrap() == zkvote::common::constants::TEST_ARRAY_16);
 // }
 // pub const AUTH_CREDENTIAL_PRESENTATION_V1: &[u8] = &[
 //     0x00, 0x0c, 0xde, 0x97, 0x97, 0x37, 0xed, 0x30, 0xbb, 0xeb, 0x16, 0x36, 0x2e, 0x4e, 0x07, 0x69,
@@ -48,7 +48,7 @@
 // ];
 
 // pub const AUTH_CREDENTIAL_PRESENTATION_V2_RESULT: [u8;
-//     zkgroup::AUTH_CREDENTIAL_PRESENTATION_V2_LEN] = [
+//     zkvote::AUTH_CREDENTIAL_PRESENTATION_V2_LEN] = [
 //     0x01, 0x32, 0x2f, 0x91, 0x00, 0xde, 0x07, 0x34, 0x55, 0x0a, 0x81, 0xdc, 0x81, 0x72, 0x4a, 0x81,
 //     0xdb, 0xd3, 0xb1, 0xb4, 0x3d, 0xbc, 0x1d, 0x55, 0x2d, 0x53, 0x45, 0x59, 0x11, 0xc2, 0x77, 0x2f,
 //     0x34, 0xa6, 0x35, 0x6c, 0xa1, 0x7c, 0x6d, 0x34, 0xd8, 0x58, 0x39, 0x14, 0x56, 0xaf, 0x55, 0xd0,
@@ -172,7 +172,7 @@
 // ];
 
 // pub const PROFILE_KEY_CREDENTIAL_PRESENTATION_V2_RESULT: [u8;
-//     zkgroup::PROFILE_KEY_CREDENTIAL_PRESENTATION_V2_LEN] = [
+//     zkvote::PROFILE_KEY_CREDENTIAL_PRESENTATION_V2_LEN] = [
 //     0x01, 0xe0, 0xf4, 0x9c, 0xef, 0x4f, 0x25, 0xc3, 0x1d, 0x1b, 0xfd, 0xc4, 0xa3, 0x28, 0xfd, 0x50,
 //     0x8d, 0x22, 0x22, 0xb6, 0xde, 0xce, 0xe2, 0xa2, 0x53, 0xcf, 0x71, 0xe8, 0x82, 0x1e, 0x97, 0xcc,
 //     0x3f, 0x86, 0x82, 0x4f, 0x79, 0xb1, 0x88, 0x4b, 0x43, 0xc6, 0x7f, 0x85, 0x47, 0x17, 0xb1, 0xa4,
@@ -325,7 +325,7 @@
 //     0xc5, 0x73, 0xf8, 0x3c, 0x33, 0xd3, 0xb9, 0xa7, 0x46,
 // ];
 
-// pub const PNI_CREDENTIAL_PRESENTATION_V2_RESULT: [u8; zkgroup::PNI_CREDENTIAL_PRESENTATION_V2_LEN] = [
+// pub const PNI_CREDENTIAL_PRESENTATION_V2_RESULT: [u8; zkvote::PNI_CREDENTIAL_PRESENTATION_V2_LEN] = [
 //     0x01, 0xf8, 0x87, 0xf4, 0x03, 0xdb, 0x1a, 0x80, 0xfa, 0x04, 0x04, 0x34, 0x13, 0x23, 0x3f, 0x56,
 //     0xbf, 0x6c, 0x53, 0xbb, 0x07, 0x8c, 0x16, 0xd2, 0x4d, 0xf9, 0x3a, 0x21, 0x9d, 0x77, 0x85, 0x69,
 //     0x68, 0x56, 0xd8, 0xf1, 0x97, 0xa0, 0x1c, 0x6e, 0x22, 0x3d, 0x4a, 0xce, 0xed, 0x1d, 0x60, 0xb9,
@@ -383,21 +383,21 @@
 
 // #[test]
 // fn test_integration_auth() {
-//     let server_secret_params = zkgroup::ServerSecretParams::generate(zkgroup::TEST_ARRAY_32);
+//     let server_secret_params = zkvote::ServerSecretParams::generate(zkvote::TEST_ARRAY_32);
 //     let server_public_params = server_secret_params.get_public_params();
 
-//     let master_key = zkgroup::groups::GroupMasterKey::new(zkgroup::TEST_ARRAY_32_1);
+//     let master_key = zkvote::groups::GroupMasterKey::new(zkvote::TEST_ARRAY_32_1);
 //     let group_secret_params =
-//         zkgroup::groups::GroupSecretParams::derive_from_master_key(master_key);
+//         zkvote::groups::GroupSecretParams::derive_from_master_key(master_key);
 //     let group_public_params = group_secret_params.get_public_params();
 
 //     // Random UID and issueTime
-//     let uid = zkgroup::TEST_ARRAY_16;
+//     let uid = zkvote::TEST_ARRAY_16;
 //     let redemption_time = 123456u32;
 
 //     // SERVER
 //     // Issue credential
-//     let randomness = zkgroup::TEST_ARRAY_32_2;
+//     let randomness = zkvote::TEST_ARRAY_32_2;
 //     let auth_credential_response =
 //         server_secret_params.issue_auth_credential(randomness, uid, redemption_time);
 
@@ -412,7 +412,7 @@
 //     assert!(plaintext == uid);
 
 //     // Create and receive presentation
-//     let randomness = zkgroup::TEST_ARRAY_32_5;
+//     let randomness = zkvote::TEST_ARRAY_32_5;
 
 //     let presentation_v2 = server_public_params.create_auth_credential_presentation_v2(
 //         randomness,
@@ -437,7 +437,7 @@
 //     assert!(AUTH_CREDENTIAL_PRESENTATION_V2_RESULT[..] == presentation_any_bytes[..]);
 
 //     let presentation_v2_parsed =
-//         zkgroup::auth::AnyAuthCredentialPresentation::new(presentation_v2_bytes).unwrap();
+//         zkvote::auth::AnyAuthCredentialPresentation::new(presentation_v2_bytes).unwrap();
 
 //     assert!(presentation_v2_parsed.get_pni_ciphertext().is_none());
 
@@ -468,21 +468,21 @@
 //     // test encoding
 //     // these tests will also discover if the serialized sizes change,
 //     //   necessitating an update to the LEN constants
-//     //let mut ccm_bytes = [0u8; zkgroup::common::constants::CLIENT_CREDENTIAL_MANAGER_LEN];
-//     let mut group_secret_params_bytes = [0u8; zkgroup::common::constants::GROUP_SECRET_PARAMS_LEN];
+//     //let mut ccm_bytes = [0u8; zkvote::common::constants::CLIENT_CREDENTIAL_MANAGER_LEN];
+//     let mut group_secret_params_bytes = [0u8; zkvote::common::constants::GROUP_SECRET_PARAMS_LEN];
 //     let mut server_secret_params_bytes =
-//         [0u8; zkgroup::common::constants::SERVER_SECRET_PARAMS_LEN];
-//     let mut group_public_params_bytes = [0u8; zkgroup::common::constants::GROUP_PUBLIC_PARAMS_LEN];
+//         [0u8; zkvote::common::constants::SERVER_SECRET_PARAMS_LEN];
+//     let mut group_public_params_bytes = [0u8; zkvote::common::constants::GROUP_PUBLIC_PARAMS_LEN];
 //     let mut server_public_params_bytes =
-//         [0u8; zkgroup::common::constants::SERVER_PUBLIC_PARAMS_LEN];
+//         [0u8; zkvote::common::constants::SERVER_PUBLIC_PARAMS_LEN];
 //     let mut auth_credential_response_bytes =
-//         [0u8; zkgroup::common::constants::AUTH_CREDENTIAL_RESPONSE_LEN];
-//     let mut auth_credential_bytes = [0u8; zkgroup::common::constants::AUTH_CREDENTIAL_LEN];
+//         [0u8; zkvote::common::constants::AUTH_CREDENTIAL_RESPONSE_LEN];
+//     let mut auth_credential_bytes = [0u8; zkvote::common::constants::AUTH_CREDENTIAL_LEN];
 //     let mut auth_credential_presentation_v2_bytes =
-//         [0u8; zkgroup::common::constants::AUTH_CREDENTIAL_PRESENTATION_V2_LEN];
-//     let mut uuid_ciphertext_bytes = [0u8; zkgroup::common::constants::UUID_CIPHERTEXT_LEN];
-//     let mut uid_bytes = [0u8; zkgroup::common::constants::UUID_LEN];
-//     let mut randomness_bytes = [0u8; zkgroup::common::constants::RANDOMNESS_LEN];
+//         [0u8; zkvote::common::constants::AUTH_CREDENTIAL_PRESENTATION_V2_LEN];
+//     let mut uuid_ciphertext_bytes = [0u8; zkvote::common::constants::UUID_CIPHERTEXT_LEN];
+//     let mut uid_bytes = [0u8; zkvote::common::constants::UUID_LEN];
+//     let mut randomness_bytes = [0u8; zkvote::common::constants::RANDOMNESS_LEN];
 
 //     //ccm_bytes.copy_from_slice(&bincode::serialize(&client_credential_manager).unwrap());
 //     group_secret_params_bytes.copy_from_slice(&bincode::serialize(&group_secret_params).unwrap());
@@ -502,28 +502,28 @@
 // #[test]
 // fn test_auth_credential_presentation_v1_is_rejected() {
 //     assert!(
-//         zkgroup::auth::AnyAuthCredentialPresentation::new(AUTH_CREDENTIAL_PRESENTATION_V1).is_err()
+//         zkvote::auth::AnyAuthCredentialPresentation::new(AUTH_CREDENTIAL_PRESENTATION_V1).is_err()
 //     );
 // }
 
 // #[test]
 // fn test_integration_auth_with_pni() {
-//     let server_secret_params = zkgroup::ServerSecretParams::generate(zkgroup::TEST_ARRAY_32);
+//     let server_secret_params = zkvote::ServerSecretParams::generate(zkvote::TEST_ARRAY_32);
 //     let server_public_params = server_secret_params.get_public_params();
 
-//     let master_key = zkgroup::groups::GroupMasterKey::new(zkgroup::TEST_ARRAY_32_1);
+//     let master_key = zkvote::groups::GroupMasterKey::new(zkvote::TEST_ARRAY_32_1);
 //     let group_secret_params =
-//         zkgroup::groups::GroupSecretParams::derive_from_master_key(master_key);
+//         zkvote::groups::GroupSecretParams::derive_from_master_key(master_key);
 //     let group_public_params = group_secret_params.get_public_params();
 
 //     // Random UID and issueTime
-//     let aci = zkgroup::TEST_ARRAY_16;
-//     let pni = zkgroup::TEST_ARRAY_16_1;
+//     let aci = zkvote::TEST_ARRAY_16;
+//     let pni = zkvote::TEST_ARRAY_16_1;
 //     let redemption_time = 123456 * SECONDS_PER_DAY;
 
 //     // SERVER
 //     // Issue credential
-//     let randomness = zkgroup::TEST_ARRAY_32_2;
+//     let randomness = zkvote::TEST_ARRAY_32_2;
 //     let auth_credential_response =
 //         server_secret_params.issue_auth_credential_with_pni(randomness, aci, pni, redemption_time);
 
@@ -533,7 +533,7 @@
 //         .unwrap();
 
 //     // Create and receive presentation
-//     let randomness = zkgroup::TEST_ARRAY_32_5;
+//     let randomness = zkvote::TEST_ARRAY_32_5;
 
 //     let presentation = server_public_params.create_auth_credential_with_pni_presentation(
 //         randomness,
@@ -543,7 +543,7 @@
 
 //     let presentation_bytes = &bincode::serialize(&presentation).unwrap();
 
-//     let presentation_any: zkgroup::auth::AnyAuthCredentialPresentation = presentation.into();
+//     let presentation_any: zkvote::auth::AnyAuthCredentialPresentation = presentation.into();
 
 //     let presentation_any_bytes = &bincode::serialize(&presentation_any).unwrap();
 
@@ -555,7 +555,7 @@
 //     assert!(AUTH_CREDENTIAL_PRESENTATION_V3_RESULT[..] == presentation_any_bytes[..]);
 
 //     let presentation_parsed = bincode::deserialize::<
-//         zkgroup::auth::AuthCredentialWithPniPresentation,
+//         zkvote::auth::AuthCredentialWithPniPresentation,
 //     >(presentation_bytes)
 //     .unwrap();
 
@@ -596,15 +596,15 @@
 //     // test encoding
 //     // these tests will also discover if the serialized sizes change,
 //     //   necessitating an update to the LEN constants
-//     let mut group_secret_params_bytes = [0u8; zkgroup::common::constants::GROUP_SECRET_PARAMS_LEN];
+//     let mut group_secret_params_bytes = [0u8; zkvote::common::constants::GROUP_SECRET_PARAMS_LEN];
 //     let mut server_secret_params_bytes =
-//         [0u8; zkgroup::common::constants::SERVER_SECRET_PARAMS_LEN];
-//     let mut group_public_params_bytes = [0u8; zkgroup::common::constants::GROUP_PUBLIC_PARAMS_LEN];
+//         [0u8; zkvote::common::constants::SERVER_SECRET_PARAMS_LEN];
+//     let mut group_public_params_bytes = [0u8; zkvote::common::constants::GROUP_PUBLIC_PARAMS_LEN];
 //     let mut server_public_params_bytes =
-//         [0u8; zkgroup::common::constants::SERVER_PUBLIC_PARAMS_LEN];
+//         [0u8; zkvote::common::constants::SERVER_PUBLIC_PARAMS_LEN];
 //     let mut auth_credential_response_bytes =
-//         [0u8; zkgroup::common::constants::AUTH_CREDENTIAL_WITH_PNI_RESPONSE_LEN];
-//     let mut auth_credential_bytes = [0u8; zkgroup::common::constants::AUTH_CREDENTIAL_WITH_PNI_LEN];
+//         [0u8; zkvote::common::constants::AUTH_CREDENTIAL_WITH_PNI_RESPONSE_LEN];
+//     let mut auth_credential_bytes = [0u8; zkvote::common::constants::AUTH_CREDENTIAL_WITH_PNI_LEN];
 
 //     group_secret_params_bytes.copy_from_slice(&bincode::serialize(&group_secret_params).unwrap());
 //     server_secret_params_bytes.copy_from_slice(&bincode::serialize(&server_secret_params).unwrap());
@@ -618,22 +618,22 @@
 // #[test]
 // fn test_integration_profile() {
 //     // SERVER
-//     let server_secret_params = zkgroup::ServerSecretParams::generate(zkgroup::TEST_ARRAY_32);
+//     let server_secret_params = zkvote::ServerSecretParams::generate(zkvote::TEST_ARRAY_32);
 //     let server_public_params = server_secret_params.get_public_params();
 
 //     // CLIENT
-//     let master_key = zkgroup::groups::GroupMasterKey::new(zkgroup::TEST_ARRAY_32_1);
+//     let master_key = zkvote::groups::GroupMasterKey::new(zkvote::TEST_ARRAY_32_1);
 //     let group_secret_params =
-//         zkgroup::groups::GroupSecretParams::derive_from_master_key(master_key);
+//         zkvote::groups::GroupSecretParams::derive_from_master_key(master_key);
 //     let group_public_params = group_secret_params.get_public_params();
 
-//     let uid = zkgroup::TEST_ARRAY_16;
+//     let uid = zkvote::TEST_ARRAY_16;
 //     let profile_key =
-//         zkgroup::profiles::ProfileKey::create(zkgroup::common::constants::TEST_ARRAY_32_1);
+//         zkvote::profiles::ProfileKey::create(zkvote::common::constants::TEST_ARRAY_32_1);
 //     let profile_key_commitment = profile_key.get_commitment(uid);
 
 //     // Create context and request
-//     let randomness = zkgroup::TEST_ARRAY_32_3;
+//     let randomness = zkvote::TEST_ARRAY_32_3;
 
 //     let context = server_public_params.create_profile_key_credential_request_context(
 //         randomness,
@@ -644,7 +644,7 @@
 
 //     // SERVER
 
-//     let randomness = zkgroup::TEST_ARRAY_32_4;
+//     let randomness = zkvote::TEST_ARRAY_32_4;
 //     let response = server_secret_params
 //         .issue_profile_key_credential(randomness, &request, uid, profile_key_commitment)
 //         .unwrap();
@@ -668,7 +668,7 @@
 //     assert!(decrypted_profile_key.get_bytes() == profile_key.get_bytes());
 
 //     // Create presentation
-//     let randomness = zkgroup::TEST_ARRAY_32_5;
+//     let randomness = zkvote::TEST_ARRAY_32_5;
 
 //     let presentation_v2 = server_public_params.create_profile_key_credential_presentation_v2(
 //         randomness,
@@ -693,7 +693,7 @@
 //     assert!(PROFILE_KEY_CREDENTIAL_PRESENTATION_V2_RESULT[..] == presentation_any_bytes[..]);
 
 //     let presentation_v2_parsed =
-//         zkgroup::profiles::AnyProfileKeyCredentialPresentation::new(presentation_v2_bytes).unwrap();
+//         zkvote::profiles::AnyProfileKeyCredentialPresentation::new(presentation_v2_bytes).unwrap();
 
 //     server_secret_params
 //         .verify_profile_key_credential_presentation(group_public_params, &presentation_v2_parsed, 0)
@@ -708,17 +708,17 @@
 //     //   necessitating an update to the LEN constants
 
 //     let mut profile_key_commitment_bytes =
-//         [0u8; zkgroup::common::constants::PROFILE_KEY_COMMITMENT_LEN];
+//         [0u8; zkvote::common::constants::PROFILE_KEY_COMMITMENT_LEN];
 //     let mut profile_key_credential_bytes =
-//         [0u8; zkgroup::common::constants::PROFILE_KEY_CREDENTIAL_LEN];
+//         [0u8; zkvote::common::constants::PROFILE_KEY_CREDENTIAL_LEN];
 //     let mut profile_key_credential_presentation_v2_bytes =
-//         [0u8; zkgroup::common::constants::PROFILE_KEY_CREDENTIAL_PRESENTATION_V2_LEN];
+//         [0u8; zkvote::common::constants::PROFILE_KEY_CREDENTIAL_PRESENTATION_V2_LEN];
 //     let mut profile_key_credential_request_bytes =
-//         [0u8; zkgroup::common::constants::PROFILE_KEY_CREDENTIAL_REQUEST_LEN];
+//         [0u8; zkvote::common::constants::PROFILE_KEY_CREDENTIAL_REQUEST_LEN];
 //     let mut profile_key_credential_request_context_bytes =
-//         [0u8; zkgroup::common::constants::PROFILE_KEY_CREDENTIAL_REQUEST_CONTEXT_LEN];
+//         [0u8; zkvote::common::constants::PROFILE_KEY_CREDENTIAL_REQUEST_CONTEXT_LEN];
 //     let mut profile_key_credential_response_bytes =
-//         [0u8; zkgroup::common::constants::PROFILE_KEY_CREDENTIAL_RESPONSE_LEN];
+//         [0u8; zkvote::common::constants::PROFILE_KEY_CREDENTIAL_RESPONSE_LEN];
 
 //     profile_key_commitment_bytes
 //         .copy_from_slice(&bincode::serialize(&profile_key_commitment).unwrap());
@@ -735,22 +735,22 @@
 // #[test]
 // fn test_integration_expiring_profile() {
 //     // SERVER
-//     let server_secret_params = zkgroup::ServerSecretParams::generate(zkgroup::TEST_ARRAY_32);
+//     let server_secret_params = zkvote::ServerSecretParams::generate(zkvote::TEST_ARRAY_32);
 //     let server_public_params = server_secret_params.get_public_params();
 
 //     // CLIENT
-//     let master_key = zkgroup::groups::GroupMasterKey::new(zkgroup::TEST_ARRAY_32_1);
+//     let master_key = zkvote::groups::GroupMasterKey::new(zkvote::TEST_ARRAY_32_1);
 //     let group_secret_params =
-//         zkgroup::groups::GroupSecretParams::derive_from_master_key(master_key);
+//         zkvote::groups::GroupSecretParams::derive_from_master_key(master_key);
 //     let group_public_params = group_secret_params.get_public_params();
 
-//     let uid = zkgroup::TEST_ARRAY_16;
+//     let uid = zkvote::TEST_ARRAY_16;
 //     let profile_key =
-//         zkgroup::profiles::ProfileKey::create(zkgroup::common::constants::TEST_ARRAY_32_1);
+//         zkvote::profiles::ProfileKey::create(zkvote::common::constants::TEST_ARRAY_32_1);
 //     let profile_key_commitment = profile_key.get_commitment(uid);
 
 //     // Create context and request
-//     let randomness = zkgroup::TEST_ARRAY_32_3;
+//     let randomness = zkvote::TEST_ARRAY_32_3;
 
 //     let context = server_public_params.create_profile_key_credential_request_context(
 //         randomness,
@@ -761,7 +761,7 @@
 
 //     // SERVER
 
-//     let randomness = zkgroup::TEST_ARRAY_32_4;
+//     let randomness = zkvote::TEST_ARRAY_32_4;
 //     let expiration = 17u64 * 24 * 60 * 60;
 //     let current_time = expiration - 2 * 24 * 60 * 60;
 //     let response = server_secret_params
@@ -794,7 +794,7 @@
 //     assert!(decrypted_profile_key.get_bytes() == profile_key.get_bytes());
 
 //     // Create presentation
-//     let randomness = zkgroup::TEST_ARRAY_32_5;
+//     let randomness = zkvote::TEST_ARRAY_32_5;
 
 //     let presentation = server_public_params.create_expiring_profile_key_credential_presentation(
 //         randomness,
@@ -804,7 +804,7 @@
 //     assert_eq!(expiration, presentation.get_expiration_time());
 //     let presentation_bytes = &bincode::serialize(&presentation).unwrap();
 
-//     let presentation_any: zkgroup::profiles::AnyProfileKeyCredentialPresentation =
+//     let presentation_any: zkvote::profiles::AnyProfileKeyCredentialPresentation =
 //         presentation.into();
 //     let presentation_any_bytes = &bincode::serialize(&presentation_any).unwrap();
 
@@ -839,7 +839,7 @@
 //         .is_err());
 
 //     let presentation_parsed =
-//         zkgroup::profiles::AnyProfileKeyCredentialPresentation::new(presentation_bytes).unwrap();
+//         zkvote::profiles::AnyProfileKeyCredentialPresentation::new(presentation_bytes).unwrap();
 //     server_secret_params
 //         .verify_profile_key_credential_presentation(
 //             group_public_params,
@@ -853,15 +853,15 @@
 //     //   necessitating an update to the LEN constants
 
 //     let mut profile_key_commitment_bytes =
-//         [0u8; zkgroup::common::constants::PROFILE_KEY_COMMITMENT_LEN];
+//         [0u8; zkvote::common::constants::PROFILE_KEY_COMMITMENT_LEN];
 //     let mut profile_key_credential_bytes =
-//         [0u8; zkgroup::common::constants::EXPIRING_PROFILE_KEY_CREDENTIAL_LEN];
+//         [0u8; zkvote::common::constants::EXPIRING_PROFILE_KEY_CREDENTIAL_LEN];
 //     let mut profile_key_credential_request_bytes =
-//         [0u8; zkgroup::common::constants::PROFILE_KEY_CREDENTIAL_REQUEST_LEN];
+//         [0u8; zkvote::common::constants::PROFILE_KEY_CREDENTIAL_REQUEST_LEN];
 //     let mut profile_key_credential_request_context_bytes =
-//         [0u8; zkgroup::common::constants::PROFILE_KEY_CREDENTIAL_REQUEST_CONTEXT_LEN];
+//         [0u8; zkvote::common::constants::PROFILE_KEY_CREDENTIAL_REQUEST_CONTEXT_LEN];
 //     let mut profile_key_credential_response_bytes =
-//         [0u8; zkgroup::common::constants::EXPIRING_PROFILE_KEY_CREDENTIAL_RESPONSE_LEN];
+//         [0u8; zkvote::common::constants::EXPIRING_PROFILE_KEY_CREDENTIAL_RESPONSE_LEN];
 
 //     profile_key_commitment_bytes
 //         .copy_from_slice(&bincode::serialize(&profile_key_commitment).unwrap());
@@ -877,23 +877,23 @@
 // #[allow(deprecated)]
 // fn test_integration_pni() {
 //     // SERVER
-//     let server_secret_params = zkgroup::ServerSecretParams::generate(zkgroup::TEST_ARRAY_32);
+//     let server_secret_params = zkvote::ServerSecretParams::generate(zkvote::TEST_ARRAY_32);
 //     let server_public_params = server_secret_params.get_public_params();
 
 //     // CLIENT
-//     let master_key = zkgroup::groups::GroupMasterKey::new(zkgroup::TEST_ARRAY_32_1);
+//     let master_key = zkvote::groups::GroupMasterKey::new(zkvote::TEST_ARRAY_32_1);
 //     let group_secret_params =
-//         zkgroup::groups::GroupSecretParams::derive_from_master_key(master_key);
+//         zkvote::groups::GroupSecretParams::derive_from_master_key(master_key);
 //     let group_public_params = group_secret_params.get_public_params();
 
-//     let aci = zkgroup::TEST_ARRAY_16;
-//     let pni = zkgroup::TEST_ARRAY_16_1;
+//     let aci = zkvote::TEST_ARRAY_16;
+//     let pni = zkvote::TEST_ARRAY_16_1;
 //     let profile_key =
-//         zkgroup::profiles::ProfileKey::create(zkgroup::common::constants::TEST_ARRAY_32_1);
+//         zkvote::profiles::ProfileKey::create(zkvote::common::constants::TEST_ARRAY_32_1);
 //     let profile_key_commitment = profile_key.get_commitment(aci);
 
 //     // Create context and request
-//     let randomness = zkgroup::TEST_ARRAY_32_3;
+//     let randomness = zkvote::TEST_ARRAY_32_3;
 
 //     let context = server_public_params.create_pni_credential_request_context(
 //         randomness,
@@ -905,7 +905,7 @@
 
 //     // SERVER
 
-//     let randomness = zkgroup::TEST_ARRAY_32_4;
+//     let randomness = zkvote::TEST_ARRAY_32_4;
 //     let response = server_secret_params
 //         .issue_pni_credential(randomness, &request, aci, pni, profile_key_commitment)
 //         .unwrap();
@@ -917,7 +917,7 @@
 //         .unwrap();
 
 //     // Create presentation
-//     let randomness = zkgroup::TEST_ARRAY_32_5;
+//     let randomness = zkvote::TEST_ARRAY_32_5;
 
 //     let presentation_v2 = server_public_params.create_pni_credential_presentation_v2(
 //         randomness,
@@ -942,7 +942,7 @@
 //     assert!(PNI_CREDENTIAL_PRESENTATION_V2_RESULT[..] == presentation_any_bytes[..]);
 
 //     let presentation_v2_parsed =
-//         zkgroup::profiles::AnyPniCredentialPresentation::new(presentation_v2_bytes).unwrap();
+//         zkvote::profiles::AnyPniCredentialPresentation::new(presentation_v2_bytes).unwrap();
 
 //     server_secret_params
 //         .verify_pni_credential_presentation(group_public_params, &presentation_v2_parsed)
@@ -956,13 +956,13 @@
 //     // these tests will also discover if the serialized sizes change,
 //     //   necessitating an update to the LEN constants
 
-//     let mut pni_credential_bytes = [0u8; zkgroup::common::constants::PNI_CREDENTIAL_LEN];
+//     let mut pni_credential_bytes = [0u8; zkvote::common::constants::PNI_CREDENTIAL_LEN];
 //     let mut pni_credential_presentation_v2_bytes =
-//         [0u8; zkgroup::common::constants::PNI_CREDENTIAL_PRESENTATION_V2_LEN];
+//         [0u8; zkvote::common::constants::PNI_CREDENTIAL_PRESENTATION_V2_LEN];
 //     let mut pni_credential_request_context_bytes =
-//         [0u8; zkgroup::common::constants::PNI_CREDENTIAL_REQUEST_CONTEXT_LEN];
+//         [0u8; zkvote::common::constants::PNI_CREDENTIAL_REQUEST_CONTEXT_LEN];
 //     let mut pni_credential_response_bytes =
-//         [0u8; zkgroup::common::constants::PNI_CREDENTIAL_RESPONSE_LEN];
+//         [0u8; zkvote::common::constants::PNI_CREDENTIAL_RESPONSE_LEN];
 
 //     pni_credential_bytes.copy_from_slice(&bincode::serialize(&pni_credential).unwrap());
 //     pni_credential_presentation_v2_bytes
@@ -974,7 +974,7 @@
 // #[test]
 // fn test_pni_credential_presentation_v1_is_rejected() {
 //     assert!(
-//         zkgroup::profiles::AnyPniCredentialPresentation::new(PNI_CREDENTIAL_PRESENTATION_V1)
+//         zkvote::profiles::AnyPniCredentialPresentation::new(PNI_CREDENTIAL_PRESENTATION_V1)
 //             .is_err()
 //     );
 // }
@@ -982,10 +982,10 @@
 // #[test]
 // fn test_server_sigs() {
 //     let server_secret_params =
-//         zkgroup::api::server_params::ServerSecretParams::generate(zkgroup::TEST_ARRAY_32);
+//         zkvote::api::server_params::ServerSecretParams::generate(zkvote::TEST_ARRAY_32);
 //     let server_public_params = server_secret_params.get_public_params();
-//     let randomness = zkgroup::TEST_ARRAY_32_2;
-//     let message = zkgroup::TEST_ARRAY_32_1;
+//     let randomness = zkvote::TEST_ARRAY_32_2;
+//     let message = zkvote::TEST_ARRAY_32_1;
 //     let signature = server_secret_params.sign(randomness, &message);
 //     //println!("signature = {:#x?}", &signature[..]);
 //     for b in signature.iter() {
@@ -1008,10 +1008,10 @@
 
 // #[test]
 // fn test_blob_encryption() {
-//     let master_key = zkgroup::groups::GroupMasterKey::new(zkgroup::TEST_ARRAY_32_1);
+//     let master_key = zkvote::groups::GroupMasterKey::new(zkvote::TEST_ARRAY_32_1);
 //     let group_secret_params =
-//         zkgroup::groups::GroupSecretParams::derive_from_master_key(master_key);
-//     let randomness = zkgroup::TEST_ARRAY_32_2;
+//         zkvote::groups::GroupSecretParams::derive_from_master_key(master_key);
+//     let randomness = zkvote::TEST_ARRAY_32_2;
 
 //     let plaintext_vec = vec![
 //         0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,

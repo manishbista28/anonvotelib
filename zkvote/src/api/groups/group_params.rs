@@ -47,7 +47,7 @@ const ENCRYPTED_BLOB_PADDING_LENGTH_SIZE: usize = std::mem::size_of::<u32>();
 impl GroupSecretParams {
     pub fn generate(randomness: RandomnessBytes) -> Self {
         let mut sho = Sho::new(
-            b"Signal_ZKGroup_20200424_Random_GroupSecretParams_Generate",
+            b"LibVote_zkvote_20230306_Random_GroupSecretParams_Generate",
             &randomness,
         );
         let mut master_key: GroupMasterKey = Default::default();
@@ -59,7 +59,7 @@ impl GroupSecretParams {
 
     pub fn derive_from_master_key(master_key: GroupMasterKey) -> Self {
         let mut sho = Sho::new(
-            b"Signal_ZKGroup_20200424_GroupMasterKey_GroupSecretParams_DeriveFromMasterKey",
+            b"LibVote_zkvote_20230306_GroupMasterKey_GroupSecretParams_DeriveFromMasterKey",
             &master_key.bytes,
         );
         let mut group_id: GroupIdentifierBytes = Default::default();
@@ -112,14 +112,14 @@ impl GroupSecretParams {
     pub fn decrypt_uuid(
         &self,
         ciphertext: api::groups::UuidCiphertext,
-    ) -> Result<UidBytes, ZkGroupVerificationFailure> {
+    ) -> Result<UidBytes, ZkVerificationFailure> {
         let uid = self.uid_enc_key_pair.decrypt(ciphertext.ciphertext)?;
         Ok(uid.to_bytes())
     }
 
     pub fn encrypt_blob(&self, randomness: RandomnessBytes, plaintext: &[u8]) -> Vec<u8> {
         let mut sho = Sho::new(
-            b"Signal_ZKGroup_20200424_Random_GroupSecretParams_EncryptBlob",
+            b"LibVote_zkvote_20230306_Random_GroupSecretParams_EncryptBlob",
             &randomness,
         );
         let nonce_vec = sho.squeeze(AESGCM_NONCE_LEN);
@@ -145,10 +145,10 @@ impl GroupSecretParams {
         self.encrypt_blob(randomness, &padded_plaintext)
     }
 
-    pub fn decrypt_blob(&self, ciphertext: &[u8]) -> Result<Vec<u8>, ZkGroupVerificationFailure> {
+    pub fn decrypt_blob(&self, ciphertext: &[u8]) -> Result<Vec<u8>, ZkVerificationFailure> {
         if ciphertext.len() < AESGCM_NONCE_LEN + 1 {
             // AESGCM_NONCE_LEN = 12 bytes for IV
-            return Err(ZkGroupVerificationFailure);
+            return Err(ZkVerificationFailure);
         }
         let unreserved_len = ciphertext.len() - 1;
         let nonce = &ciphertext[unreserved_len - AESGCM_NONCE_LEN..unreserved_len];
@@ -159,18 +159,18 @@ impl GroupSecretParams {
     pub fn decrypt_blob_with_padding(
         &self,
         ciphertext: &[u8],
-    ) -> Result<Vec<u8>, ZkGroupVerificationFailure> {
+    ) -> Result<Vec<u8>, ZkVerificationFailure> {
         let mut decrypted = self.decrypt_blob(ciphertext)?;
 
         if decrypted.len() < ENCRYPTED_BLOB_PADDING_LENGTH_SIZE {
-            return Err(ZkGroupVerificationFailure);
+            return Err(ZkVerificationFailure);
         }
         let (padding_len_bytes, plaintext_plus_padding) =
             decrypted.split_at(ENCRYPTED_BLOB_PADDING_LENGTH_SIZE);
 
         let padding_len = u32::from_be_bytes(padding_len_bytes.try_into().expect("correct size"));
         if plaintext_plus_padding.len() < padding_len as usize {
-            return Err(ZkGroupVerificationFailure);
+            return Err(ZkVerificationFailure);
         }
 
         decrypted.truncate(decrypted.len() - padding_len as usize);
@@ -192,17 +192,17 @@ impl GroupSecretParams {
         key: &[u8],
         nonce: &[u8],
         ciphertext: &[u8],
-    ) -> Result<Vec<u8>, ZkGroupVerificationFailure> {
+    ) -> Result<Vec<u8>, ZkVerificationFailure> {
         if ciphertext.len() < AESGCM_TAG_LEN {
             // AESGCM_TAG_LEN = 16 bytes for tag
-            return Err(ZkGroupVerificationFailure);
+            return Err(ZkVerificationFailure);
         }
         let key = GenericArray::from_slice(key);
         let aead_cipher = Aes256GcmSiv::new(key);
         let nonce = GenericArray::from_slice(nonce);
         match aead_cipher.decrypt(nonce, ciphertext) {
             Ok(plaintext_vec) => Ok(plaintext_vec),
-            Err(_) => Err(ZkGroupVerificationFailure),
+            Err(_) => Err(ZkVerificationFailure),
         }
     }
 }

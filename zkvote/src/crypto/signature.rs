@@ -59,9 +59,9 @@ impl PublicKey {
         &self,
         message: &[u8],
         signature: SignatureBytes,
-    ) -> Result<(), ZkGroupVerificationFailure> {
+    ) -> Result<(), ZkVerificationFailure> {
         match poksho::verify_signature(&signature, self.public_key, message) {
-            Err(_) => Err(ZkGroupVerificationFailure),
+            Err(_) => Err(ZkVerificationFailure),
             Ok(_) => Ok(()),
         }
     }
@@ -82,20 +82,20 @@ mod tests {
         assert!(key_pair_bytes.len() == 64);
         let public_key_bytes = bincode::serialize(&key_pair.get_public_key()).unwrap();
         assert!(public_key_bytes.len() == 32);
-        let key_pairY: KeyPair = bincode::deserialize(&key_pair_bytes).unwrap();
-        assert!(key_pair == key_pairY);
+        let key_pairy: KeyPair = bincode::deserialize(&key_pair_bytes).unwrap();
+        assert!(key_pair == key_pairy);
 
         let mut message = TEST_ARRAY_32_1;
 
         let signature = key_pair.sign(&message, &mut sho);
-        key_pairY
+        key_pairy
             .get_public_key()
             .verify(&message, signature)
             .unwrap();
 
         // test signature failure
         message[0] ^= 1;
-        key_pairY
+        key_pairy
             .get_public_key()
             .verify(&message, signature)
             .expect_err("signature verify should have failed");

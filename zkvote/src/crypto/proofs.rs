@@ -1,13 +1,6 @@
-//
-// Copyright 2020-2022 Signal Messenger, LLC.
-// SPDX-License-Identifier: AGPL-3.0-only
-//
-
 #![allow(non_snake_case)]
 
-// use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
 use curve25519_dalek::ristretto::RistrettoPoint;
-// use curve25519_dalek::traits::Identity;
 
 use serde::{Deserialize, Serialize};
 
@@ -16,7 +9,6 @@ use crate::common::constants::*;
 use crate::common::errors::*;
 use crate::common::sho::*;
 use crate::common::simple_types::*;
-// use crate::crypto::timestamp_struct::TimestampStruct;
 use crate::crypto::{
     credentials, uid_encryption, uid_struct,
     auth_credential_commitment, auth_credential_request,
@@ -152,7 +144,7 @@ impl AuthCredentialIssuanceProof {
         ciphertext: auth_credential_request::Ciphertext,
         blinded_credential: credentials::BlindedAuthCredential,
         expiration_time: u64,
-    ) -> Result<(), ZkGroupVerificationFailure> {
+    ) -> Result<(), ZkVerificationFailure> {
         let credentials_system = credentials::SystemParams::get_hardcoded();
         let expiration_time_scalar = encode_timestamp(expiration_time);
 
@@ -179,7 +171,7 @@ impl AuthCredentialIssuanceProof {
 
 
         match Self::get_poksho_statement().verify_proof(&self.poksho_proof, &point_args, &[]) {
-            Err(_) => Err(ZkGroupVerificationFailure),
+            Err(_) => Err(ZkVerificationFailure),
             Ok(_) => Ok(()),
         }
     }
@@ -239,7 +231,7 @@ impl AuthCredentialRequestProof {
         public_key: auth_credential_request::PublicKey,
         ciphertext: auth_credential_request::Ciphertext,
         commitment: auth_credential_commitment::Commitment,
-    ) -> Result<(), ZkGroupVerificationFailure> {
+    ) -> Result<(), ZkVerificationFailure> {
         let commitment_system = auth_credential_commitment::SystemParams::get_hardcoded();
 
         let mut point_args = poksho::PointArgs::new();
@@ -254,7 +246,7 @@ impl AuthCredentialRequestProof {
         point_args.add("-G_j2", -commitment_system.G_j2);
 
         match Self::get_poksho_statement().verify_proof(&self.poksho_proof, &point_args, &[]) {
-            Err(_) => Err(ZkGroupVerificationFailure),
+            Err(_) => Err(ZkVerificationFailure),
             Ok(_) => Ok(()),
         }
     }
@@ -280,10 +272,9 @@ impl AuthCredentialPresentationProof {
         credential: credentials::AuthCredential,
         uid: uid_struct::UidStruct,
         uid_ciphertext: uid_encryption::Ciphertext,
-        sho: &mut Sho,
     ) -> Self {
         let mut sho =     Sho::new(
-            b"Signal_ZKGroup_20200424_Random_ServerSecretParams_Generate",
+            b"LibVote_zkvote_20230306_Random_ServerSecretParams_Generate",
             b"",
         );
         let credentials_system = credentials::SystemParams::get_hardcoded();
@@ -360,7 +351,7 @@ impl AuthCredentialPresentationProof {
         uid_enc_public_key: uid_encryption::PublicKey,
         uid_ciphertext: uid_encryption::Ciphertext,
         expiration_time: u64,
-    ) -> Result<(), ZkGroupVerificationFailure> {
+    ) -> Result<(), ZkVerificationFailure> {
         let enc_system = uid_encryption::SystemParams::get_hardcoded();
         let credentials_system = credentials::SystemParams::get_hardcoded();
 
@@ -410,7 +401,7 @@ impl AuthCredentialPresentationProof {
         point_args.add("G_y3", credentials_system.G_y[3]);
 
         match Self::get_poksho_statement().verify_proof(poksho_proof, &point_args, &[]) {
-            Err(_) => Err(ZkGroupVerificationFailure),
+            Err(_) => Err(ZkVerificationFailure),
             Ok(_) => Ok(()),
         }
     }
@@ -517,7 +508,7 @@ impl VoteCredentialIssuanceProof {
         blinded_credential: credentials::BlindedVoteCredential,
         stake_weight: VoteStakeWeightBytes,
         topic_id: VoteTopicIDBytes,
-    ) -> Result<(), ZkGroupVerificationFailure> {
+    ) -> Result<(), ZkVerificationFailure> {
         let credentials_system = credentials::SystemParams::get_hardcoded();
         let M1 = credentials::convert_to_point_vote_stake_weight(stake_weight);
         let M2 = credentials::convert_to_point_vote_topic_id(topic_id);
@@ -546,7 +537,7 @@ impl VoteCredentialIssuanceProof {
         point_args.add("M2", M2);
 
         match Self::get_poksho_statement().verify_proof(&self.poksho_proof, &point_args, &[]) {
-            Err(_) => Err(ZkGroupVerificationFailure),
+            Err(_) => Err(ZkVerificationFailure),
             Ok(_) => Ok(()),
         }
     }
@@ -639,7 +630,7 @@ impl VoteCredentialPresentationProof {
         vote_id: VoteUniqIDBytes,
         stake_weight: VoteStakeWeightBytes,
         topic_id: VoteTopicIDBytes,
-    ) -> Result<(), ZkGroupVerificationFailure> {
+    ) -> Result<(), ZkVerificationFailure> {
         let credentials_system = credentials::SystemParams::get_hardcoded();
 
         let Self {
@@ -689,7 +680,7 @@ impl VoteCredentialPresentationProof {
         point_args.add("G_y4", credentials_system.G_y[4]);
 
         match Self::get_poksho_statement().verify_proof(poksho_proof, &point_args, &[]) {
-            Err(_) => Err(ZkGroupVerificationFailure),
+            Err(_) => Err(ZkVerificationFailure),
             Ok(_) => Ok(()),
         }
     }

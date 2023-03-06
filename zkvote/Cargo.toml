@@ -1,14 +1,9 @@
-#
-# Copyright 2020-2022 Signal Messenger, LLC.
-# SPDX-License-Identifier: AGPL-3.0-only
-#
-
 [package]
-name = "zkgroup"
+name = "zkvote"
 version = "0.9.0"
-authors = ["Signal Messenger LLC"]
+authors = ["Signal Messenger LLC", "Thuppaa"]
 edition = "2018"
-description = "A zero-knowledge group library"
+description = "Anonymous voting with zero-knowledge proofs"
 license = "AGPL-3.0-only"
 
 [dependencies]
@@ -39,7 +34,7 @@ branch = "lizard2"
 criterion = "0.4"
 
 [[bench]]
-name = "zkgroup_benchmarks"
+name = "zkvote_benchmarks"
 harness = false
 
 [[bin]]
