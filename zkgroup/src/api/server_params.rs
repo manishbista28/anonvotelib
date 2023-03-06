@@ -139,6 +139,7 @@ impl ServerSecretParams {
             blinded_credential: blinded_credential_with_secret_nonce
                 .get_blinded_auth_credential(),
             proof,
+            expiration_time: credential_expiration_time,
         })
     }
 
@@ -239,26 +240,26 @@ impl ServerPublicParams {
 
     pub fn receive_auth_credential(
         &self,
-        context: &api::auth::AuthCredentialRequestContext,
+        client_request: &api::auth::AuthCredentialRequestContext,
         response: &api::auth::AuthCredentialResponse,
         expiration_time: u64,
     ) -> Result<api::auth::AuthCredential, ZkGroupVerificationFailure> {
         response.proof.verify(
             self.auth_credentials_public_key,
-            context.key_pair.get_public_key(),
-            context.ciphertext_with_secret_nonce.get_ciphertext(),
+            client_request.key_pair.get_public_key(),
+            client_request.ciphertext_with_secret_nonce.get_ciphertext(),
             response.blinded_credential,
-            expiration_time,
+            response.expiration_time,
         )?;
 
-        let credential = context
+        let credential = client_request
             .key_pair
             .decrypt_blinded_auth_credential(response.blinded_credential);
 
         Ok(api::auth::AuthCredential {
             reserved: Default::default(),
             credential,
-            uid_bytes: context.uid_bytes,
+            uid_bytes: client_request.uid_bytes,
             expiration_time,
         })
     }
@@ -282,7 +283,6 @@ impl ServerPublicParams {
             auth_credential.credential,
             uid,
             uuid_ciphertext.ciphertext,
-            auth_credential.expiration_time,
             &mut sho,
         );
 

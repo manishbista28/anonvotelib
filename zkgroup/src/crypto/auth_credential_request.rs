@@ -26,20 +26,20 @@ pub struct PublicKey {
 
 #[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CiphertextWithSecretNonce {
-    pub(crate) r1: Scalar,
-    pub(crate) r2: Scalar,
-    pub(crate) D1: RistrettoPoint,
-    pub(crate) D2: RistrettoPoint,
-    pub(crate) E1: RistrettoPoint,
-    pub(crate) E2: RistrettoPoint,
+    pub(crate) rX: Scalar,
+    pub(crate) rY: Scalar,
+    pub(crate) DX: RistrettoPoint,
+    pub(crate) DY: RistrettoPoint,
+    pub(crate) EX: RistrettoPoint,
+    pub(crate) EY: RistrettoPoint,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Ciphertext {
-    pub(crate) D1: RistrettoPoint,
-    pub(crate) D2: RistrettoPoint,
-    pub(crate) E1: RistrettoPoint,
-    pub(crate) E2: RistrettoPoint,
+    pub(crate) DX: RistrettoPoint,
+    pub(crate) DY: RistrettoPoint,
+    pub(crate) EX: RistrettoPoint,
+    pub(crate) EY: RistrettoPoint,
 }
 
 impl KeyPair {
@@ -58,21 +58,21 @@ impl KeyPair {
         uid_struct: uid_struct::UidStruct,
         sho: &mut Sho,
     ) -> CiphertextWithSecretNonce {
-        let r1 = sho.get_scalar();
-        let r2 = sho.get_scalar();
-        let D1 = r1 * RISTRETTO_BASEPOINT_POINT;
-        let E1 = r2 * RISTRETTO_BASEPOINT_POINT;
+        let rX = sho.get_scalar();
+        let rY = sho.get_scalar();
+        let DX = rX * RISTRETTO_BASEPOINT_POINT;
+        let EX = rY * RISTRETTO_BASEPOINT_POINT;
 
-        let D2 = r1 * (self.Y) + uid_struct.M1;
-        let E2 = r2 * (self.Y) + uid_struct.M2;
+        let DY = rX * (self.Y) + uid_struct.M2;
+        let EY = rY * (self.Y) + uid_struct.M3;
 
         CiphertextWithSecretNonce {
-            r1,
-            r2,
-            D1,
-            D2,
-            E1,
-            E2,
+            rX,
+            rY,
+            DX,
+            DY,
+            EX,
+            EY,
         }
     }
 
@@ -80,7 +80,7 @@ impl KeyPair {
         &self,
         blinded_auth_credential: BlindedAuthCredential,
     ) -> AuthCredential {
-        let V = blinded_auth_credential.S2 - self.y * blinded_auth_credential.S1;
+        let V = blinded_auth_credential.SY - self.y * blinded_auth_credential.SX;
         AuthCredential {
             t: blinded_auth_credential.t,
             U: blinded_auth_credential.U,
@@ -93,10 +93,10 @@ impl KeyPair {
 impl CiphertextWithSecretNonce {
     pub fn get_ciphertext(&self) -> Ciphertext {
         Ciphertext {
-            D1: self.D1,
-            D2: self.D2,
-            E1: self.E1,
-            E2: self.E2,
+            DX: self.DX,
+            DY: self.DY,
+            EX: self.EX,
+            EY: self.EY,
         }
     }
 }

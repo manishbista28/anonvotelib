@@ -75,17 +75,17 @@ impl AuthCredentialIssuanceProof {
                 ("y3", "G_y3"),
             ],
         );
-        st.add("S1", &[("y2", "D1"), ("y3", "E1"), ("rprime", "G")]);
+        st.add("SX", &[("y2", "DX"), ("y3", "EX"), ("rprime", "G")]);
         st.add(
-            "S2",
+            "SY",
             &[
-                ("y2", "D2"),
-                ("y3", "E2"),
+                ("y2", "DY"),
+                ("y3", "EY"),
                 ("rprime", "Y"),
                 ("w", "G_w"),
                 ("x0", "U"),
                 ("x1", "tU"),
-                ("y1", "M3"),
+                ("y1", "M1"),
             ],
         );
         st
@@ -122,16 +122,16 @@ impl AuthCredentialIssuanceProof {
         point_args.add("G_y1", credentials_system.G_y[1]);
         point_args.add("G_y2", credentials_system.G_y[2]);
         point_args.add("G_y3", credentials_system.G_y[3]);
-        point_args.add("S1", blinded_credential.S1);
-        point_args.add("D1", ciphertext.D1);
-        point_args.add("E1", ciphertext.E1);
-        point_args.add("S2", blinded_credential.S2);
-        point_args.add("D2", ciphertext.D2);
-        point_args.add("E2", ciphertext.E2);
+        point_args.add("SX", blinded_credential.SX);
+        point_args.add("DX", ciphertext.DX);
+        point_args.add("EX", ciphertext.EX);
+        point_args.add("SY", blinded_credential.SY);
+        point_args.add("DY", ciphertext.DY);
+        point_args.add("EY", ciphertext.EY);
         point_args.add("Y", request_public_key.Y);
         point_args.add("U", blinded_credential.U);
         point_args.add("tU", blinded_credential.t * blinded_credential.U);
-        point_args.add("M3", expiration_time_scalar * credentials_system.G_m3);
+        point_args.add("M1", expiration_time_scalar * credentials_system.G_m1);
 
 
         let poksho_proof = Self::get_poksho_statement()
@@ -166,16 +166,16 @@ impl AuthCredentialIssuanceProof {
         point_args.add("G_y1", credentials_system.G_y[1]);
         point_args.add("G_y2", credentials_system.G_y[2]);
         point_args.add("G_y3", credentials_system.G_y[3]);
-        point_args.add("S1", blinded_credential.S1);
-        point_args.add("D1", ciphertext.D1);
-        point_args.add("E1", ciphertext.E1);
-        point_args.add("S2", blinded_credential.S2);
-        point_args.add("D2", ciphertext.D2);
-        point_args.add("E2", ciphertext.E2);
+        point_args.add("SX", blinded_credential.SX);
+        point_args.add("DX", ciphertext.DX);
+        point_args.add("EX", ciphertext.EX);
+        point_args.add("SY", blinded_credential.SY);
+        point_args.add("DY", ciphertext.DY);
+        point_args.add("EY", ciphertext.EY);
         point_args.add("Y", request_public_key.Y);
         point_args.add("U", blinded_credential.U);
         point_args.add("tU", blinded_credential.t * blinded_credential.U);
-        point_args.add("M3", expiration_time_scalar * credentials_system.G_m3);
+        point_args.add("M1", expiration_time_scalar * credentials_system.G_m1);
 
 
         match Self::get_poksho_statement().verify_proof(&self.poksho_proof, &point_args, &[]) {
@@ -190,11 +190,11 @@ impl AuthCredentialRequestProof {
     pub fn get_poksho_statement() -> poksho::Statement {
         let mut st = poksho::Statement::new();
         st.add("Y", &[("y", "G")]);
-        st.add("D1", &[("r1", "G")]);
-        st.add("E1", &[("r2", "G")]);
+        st.add("DX", &[("rX", "G")]);
+        st.add("EX", &[("rY", "G")]);
         st.add("J3", &[("j3", "G_j3")]);
-        st.add("D2-J1", &[("r1", "Y"), ("j3", "-G_j1")]);
-        st.add("E2-J2", &[("r2", "Y"), ("j3", "-G_j2")]);
+        st.add("DY-J1", &[("rX", "Y"), ("j3", "-G_j1")]);
+        st.add("EY-J2", &[("rY", "Y"), ("j3", "-G_j2")]);
         st
     }
 
@@ -208,19 +208,19 @@ impl AuthCredentialRequestProof {
 
         let mut scalar_args = poksho::ScalarArgs::new();
         scalar_args.add("y", key_pair.y);
-        scalar_args.add("r1", ciphertext.r1);
-        scalar_args.add("r2", ciphertext.r2);
+        scalar_args.add("rX", ciphertext.rX);
+        scalar_args.add("rY", ciphertext.rY);
         scalar_args.add("j3", commitment.j3);
 
         let mut point_args = poksho::PointArgs::new();
         point_args.add("Y", key_pair.Y);
-        point_args.add("D1", ciphertext.D1);
-        point_args.add("E1", ciphertext.E1);
+        point_args.add("DX", ciphertext.DX);
+        point_args.add("EX", ciphertext.EX);
         point_args.add("J3", commitment.J3);
         point_args.add("G_j3", commitment_system.G_j3);
-        point_args.add("D2-J1", ciphertext.D2 - commitment.J1);
+        point_args.add("DY-J1", ciphertext.DY - commitment.J1);
         point_args.add("-G_j1", -commitment_system.G_j1);
-        point_args.add("E2-J2", ciphertext.E2 - commitment.J2);
+        point_args.add("EY-J2", ciphertext.EY - commitment.J2);
         point_args.add("-G_j2", -commitment_system.G_j2);
 
         let poksho_proof = Self::get_poksho_statement()
@@ -244,13 +244,13 @@ impl AuthCredentialRequestProof {
 
         let mut point_args = poksho::PointArgs::new();
         point_args.add("Y", public_key.Y);
-        point_args.add("D1", ciphertext.D1);
-        point_args.add("E1", ciphertext.E1);
+        point_args.add("DX", ciphertext.DX);
+        point_args.add("EX", ciphertext.EX);
         point_args.add("J3", commitment.J3);
         point_args.add("G_j3", commitment_system.G_j3);
-        point_args.add("D2-J1", ciphertext.D2 - commitment.J1);
+        point_args.add("DY-J1", ciphertext.DY - commitment.J1);
         point_args.add("-G_j1", -commitment_system.G_j1);
-        point_args.add("E2-J2", ciphertext.E2 - commitment.J2);
+        point_args.add("EY-J2", ciphertext.EY - commitment.J2);
         point_args.add("-G_j2", -commitment_system.G_j2);
 
         match Self::get_poksho_statement().verify_proof(&self.poksho_proof, &point_args, &[]) {
@@ -267,9 +267,10 @@ impl AuthCredentialPresentationProof {
 
         st.add("Z", &[("z", "I")]);
         st.add("C_x1", &[("t", "C_x0"), ("z0", "G_x0"), ("z", "G_x1")]);
-        st.add("A", &[("a1", "G_a1"), ("a2", "G_a2")]);
-        st.add("C_y2-E_A2", &[("z", "G_y2"), ("a2", "-E_A1")]);
-        st.add("C_y3", &[("z", "G_y3")]);
+        st.add("A", &[("a2", "G_a2"), ("a3", "G_a3")]);
+        st.add("C_y3-E_A3", &[("z", "G_y3"), ("a3", "-E_A2")]);
+        st.add("E_A2", &[("a2", "C_y2"), ("z1", "G_y2")]);
+        st.add("C_y1", &[("z", "G_y1")]);
         st
     }
 
@@ -279,39 +280,40 @@ impl AuthCredentialPresentationProof {
         credential: credentials::AuthCredential,
         uid: uid_struct::UidStruct,
         uid_ciphertext: uid_encryption::Ciphertext,
-        expiration_time: u64,
         sho: &mut Sho,
     ) -> Self {
+        let mut sho =     Sho::new(
+            b"Signal_ZKGroup_20200424_Random_ServerSecretParams_Generate",
+            b"",
+        );
         let credentials_system = credentials::SystemParams::get_hardcoded();
         let uid_system = uid_encryption::SystemParams::get_hardcoded();
-        let M = credentials::convert_to_points_uid_struct(uid, expiration_time);
+        //let M = credentials::convert_to_points_uid_struct(uid, expiration_time);
 
         let z = sho.get_scalar();
 
-        let C_y1 = z * credentials_system.G_y[1] + M[0];
-        let C_y2 = z * credentials_system.G_y[2] + M[1];
-        let C_y3 = z * credentials_system.G_y[3];
+        let C_y1 = z * credentials_system.G_y[1];
+        let C_y2 = z * credentials_system.G_y[2] + uid.M2;
+        let C_y3 = z * credentials_system.G_y[3] + uid.M3;
 
         let C_x0 = z * credentials_system.G_x0 + credential.U;
         let C_V = z * credentials_system.G_V + credential.V;
         let C_x1 = z * credentials_system.G_x1 + credential.t * credential.U;
 
         let z0 = -z * credential.t;
-        //let z1 = -z * uid_enc_key_pair.a1;
+        let z1 = -z * uid_enc_key_pair.a2;
 
         let I = credentials_public_key.I;
         let Z = z * I;
 
-        // Scalars listed in order of stmts for debugging
         let mut scalar_args = poksho::ScalarArgs::new();
         scalar_args.add("z", z);
         scalar_args.add("t", credential.t);
         scalar_args.add("z0", z0);
-        scalar_args.add("a1", uid_enc_key_pair.a1);
+        scalar_args.add("z1", z1);
         scalar_args.add("a2", uid_enc_key_pair.a2);
-        //scalar_args.add("z1", z1);
+        scalar_args.add("a3", uid_enc_key_pair.a3);
 
-        // Points listed in order of stmts for debugging
         let mut point_args = poksho::PointArgs::new();
         point_args.add("Z", Z);
         point_args.add("I", I);
@@ -320,12 +322,16 @@ impl AuthCredentialPresentationProof {
         point_args.add("G_x0", credentials_system.G_x0);
         point_args.add("G_x1", credentials_system.G_x1);
         point_args.add("A", uid_enc_key_pair.A);
-        point_args.add("G_a1", uid_system.G_a1);
         point_args.add("G_a2", uid_system.G_a2);
-        point_args.add("C_y2-E_A2", C_y2 - uid_ciphertext.E_A2);
+        point_args.add("G_a3", uid_system.G_a3);
+        
+        point_args.add("C_y3-E_A3", C_y3 - uid_ciphertext.E_A3);
         point_args.add("G_y2", credentials_system.G_y[2]);
-        point_args.add("-E_A1", -uid_ciphertext.E_A1);
-        point_args.add("C_y3", C_y3);
+        point_args.add("G_y1", credentials_system.G_y[1]);
+        point_args.add("-E_A2", -uid_ciphertext.E_A2);
+        point_args.add("E_A2", uid_ciphertext.E_A2);
+        point_args.add("C_y2", C_y2);
+        point_args.add("C_y1", C_y1);
         point_args.add("G_y3", credentials_system.G_y[3]);
 
         let poksho_proof = Self::get_poksho_statement()
@@ -379,11 +385,10 @@ impl AuthCredentialPresentationProof {
             ..
         } = credentials_key_pair;
 
-        let m3 = encode_timestamp(expiration_time);
-        let M3 = m3 * credentials_system.G_m3;
-        let Z = C_V - W - x0 * C_x0 - x1 * C_x1 - y1 * C_y1 - y2 * C_y2- y3 * (C_y3 + M3);
+        let m1 = encode_timestamp(expiration_time);
+        let M1 = m1 * credentials_system.G_m1;
+        let Z = C_V - W - x0 * C_x0 - x1 * C_x1 - y1 * (C_y1 + M1) - y2 * C_y2 - y3 * C_y3;
 
-        // Points listed in order of stmts for debugging
         let mut point_args = poksho::PointArgs::new();
         point_args.add("Z", Z);
         point_args.add("I", I);
@@ -392,17 +397,17 @@ impl AuthCredentialPresentationProof {
         point_args.add("G_x0", credentials_system.G_x0);
         point_args.add("G_x1", credentials_system.G_x1);
         point_args.add("A", uid_enc_public_key.A);
-        point_args.add("G_a1", enc_system.G_a1);
         point_args.add("G_a2", enc_system.G_a2);
-        point_args.add("C_y2-E_A2", C_y2 - uid_ciphertext.E_A2);
+        point_args.add("G_a3", enc_system.G_a3);
+        
+        point_args.add("C_y3-E_A3", C_y3 - uid_ciphertext.E_A3);
         point_args.add("G_y2", credentials_system.G_y[2]);
-        point_args.add("-E_A1", -uid_ciphertext.E_A1);
-        //point_args.add("E_A1", uid_ciphertext.E_A1);
-        //point_args.add("C_y1", C_y1);
-        //point_args.add("G_y1", credentials_system.G_y[1]);
-        point_args.add("C_y3", C_y3);
+        point_args.add("G_y1", credentials_system.G_y[1]);
+        point_args.add("-E_A2", -uid_ciphertext.E_A2);
+        point_args.add("E_A2", uid_ciphertext.E_A2);
+        point_args.add("C_y2", C_y2);
+        point_args.add("C_y1", C_y1);
         point_args.add("G_y3", credentials_system.G_y[3]);
-        //point_args.add("0", RistrettoPoint::identity());
 
         match Self::get_poksho_statement().verify_proof(poksho_proof, &point_args, &[]) {
             Err(_) => Err(ZkGroupVerificationFailure),
@@ -427,12 +432,12 @@ impl VoteCredentialIssuanceProof {
                 ("y4", "G_y4"),
             ],
         );
-        st.add("S1", &[("y1", "D1"), ("y2", "E1"), ("rprime", "G")]);
+        st.add("SX", &[("y1", "DX"), ("y2", "EX"), ("rprime", "G")]);
         st.add(
-            "S2",
+            "SY",
             &[
-                ("y1", "D2"),
-                ("y2", "E2"),
+                ("y1", "DY"),
+                ("y2", "EY"),
                 ("rprime", "Y"),
                 ("w", "G_w"),
                 ("x0", "U"),
@@ -480,12 +485,12 @@ impl VoteCredentialIssuanceProof {
         point_args.add("G_y2", credentials_system.G_y[2]);
         point_args.add("G_y3", credentials_system.G_y[3]);
         point_args.add("G_y4", credentials_system.G_y[4]);
-        point_args.add("S1", blinded_credential.S1);
-        point_args.add("D1", ciphertext.D1);
-        point_args.add("E1", ciphertext.E1);
-        point_args.add("S2", blinded_credential.S2);
-        point_args.add("D2", ciphertext.D2);
-        point_args.add("E2", ciphertext.E2);
+        point_args.add("SX", blinded_credential.SX);
+        point_args.add("DX", ciphertext.DX);
+        point_args.add("EX", ciphertext.EX);
+        point_args.add("SY", blinded_credential.SY);
+        point_args.add("DY", ciphertext.DY);
+        point_args.add("EY", ciphertext.EY);
         point_args.add("Y", request_public_key.Y);
         point_args.add("U", blinded_credential.U);
         point_args.add("tU", blinded_credential.t * blinded_credential.U);
@@ -528,12 +533,12 @@ impl VoteCredentialIssuanceProof {
         point_args.add("G_y2", credentials_system.G_y[2]);
         point_args.add("G_y3", credentials_system.G_y[3]);
         point_args.add("G_y4", credentials_system.G_y[4]);
-        point_args.add("S1", blinded_credential.S1);
-        point_args.add("D1", ciphertext.D1);
-        point_args.add("E1", ciphertext.E1);
-        point_args.add("S2", blinded_credential.S2);
-        point_args.add("D2", ciphertext.D2);
-        point_args.add("E2", ciphertext.E2);
+        point_args.add("SX", blinded_credential.SX);
+        point_args.add("DX", ciphertext.DX);
+        point_args.add("EX", ciphertext.EX);
+        point_args.add("SY", blinded_credential.SY);
+        point_args.add("DY", ciphertext.DY);
+        point_args.add("EY", ciphertext.EY);
         point_args.add("Y", request_public_key.Y);
         point_args.add("U", blinded_credential.U);
         point_args.add("tU", blinded_credential.t * blinded_credential.U);

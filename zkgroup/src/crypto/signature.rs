@@ -82,20 +82,20 @@ mod tests {
         assert!(key_pair_bytes.len() == 64);
         let public_key_bytes = bincode::serialize(&key_pair.get_public_key()).unwrap();
         assert!(public_key_bytes.len() == 32);
-        let key_pair2: KeyPair = bincode::deserialize(&key_pair_bytes).unwrap();
-        assert!(key_pair == key_pair2);
+        let key_pairY: KeyPair = bincode::deserialize(&key_pair_bytes).unwrap();
+        assert!(key_pair == key_pairY);
 
         let mut message = TEST_ARRAY_32_1;
 
         let signature = key_pair.sign(&message, &mut sho);
-        key_pair2
+        key_pairY
             .get_public_key()
             .verify(&message, signature)
             .unwrap();
 
         // test signature failure
         message[0] ^= 1;
-        key_pair2
+        key_pairY
             .get_public_key()
             .verify(&message, signature)
             .expect_err("signature verify should have failed");

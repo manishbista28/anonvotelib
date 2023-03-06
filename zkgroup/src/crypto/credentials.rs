@@ -125,16 +125,16 @@ pub struct BlindedAuthCredentialWithSecretNonce {
     pub(crate) rprime: Scalar,
     pub(crate) t: Scalar,
     pub(crate) U: RistrettoPoint,
-    pub(crate) S1: RistrettoPoint,
-    pub(crate) S2: RistrettoPoint,
+    pub(crate) SX: RistrettoPoint,
+    pub(crate) SY: RistrettoPoint,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BlindedAuthCredential {
     pub(crate) t: Scalar,
     pub(crate) U: RistrettoPoint,
-    pub(crate) S1: RistrettoPoint,
-    pub(crate) S2: RistrettoPoint,
+    pub(crate) SX: RistrettoPoint,
+    pub(crate) SY: RistrettoPoint,
 }
 
 
@@ -150,16 +150,16 @@ pub struct BlindedVoteCredentialWithSecretNonce {
     pub(crate) rprime: Scalar,
     pub(crate) t: Scalar,
     pub(crate) U: RistrettoPoint,
-    pub(crate) S1: RistrettoPoint,
-    pub(crate) S2: RistrettoPoint,
+    pub(crate) SX: RistrettoPoint,
+    pub(crate) SY: RistrettoPoint,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BlindedVoteCredential {
     pub(crate) t: Scalar,
     pub(crate) U: RistrettoPoint,
-    pub(crate) S1: RistrettoPoint,
-    pub(crate) S2: RistrettoPoint,
+    pub(crate) SX: RistrettoPoint,
+    pub(crate) SY: RistrettoPoint,
 }
 
 pub(crate) fn convert_to_points_uid_struct(
@@ -168,7 +168,7 @@ pub(crate) fn convert_to_points_uid_struct(
 ) -> Vec<RistrettoPoint> {
     let system = SystemParams::get_hardcoded();
     let expiration_time_scalar = encode_timestamp(expiration_time);
-    vec![uid.M1, uid.M2, expiration_time_scalar * system.G_m1]
+    vec![expiration_time_scalar * system.G_m1, uid.M2, uid.M3]
 }
 
 pub(crate) fn convert_to_point_vote_type(
@@ -362,20 +362,20 @@ impl KeyPair<AuthCredential> {
     ) -> BlindedAuthCredentialWithSecretNonce {
         let system = SystemParams::get_hardcoded();
         let expiration_time_scalar = encode_timestamp(expiration_time);
-        let M = [expiration_time_scalar * system.G_m3];
+        let M = [expiration_time_scalar * system.G_m1];
 
         let (t, U, Vprime) = self.credential_core(&M, sho);
         let rprime = sho.get_scalar();
-        let R1 = rprime * RISTRETTO_BASEPOINT_POINT;
-        let R2 = rprime * public_key.Y + Vprime;
-        let S1 = R1 + (self.y[2] * ciphertext.D1) + (self.y[3] * ciphertext.E1);
-        let S2 = R2 + (self.y[2] * ciphertext.D2) + (self.y[3] * ciphertext.E2);
+        let RX = rprime * RISTRETTO_BASEPOINT_POINT;
+        let RY = rprime * public_key.Y + Vprime;
+        let SX = RX + (self.y[2] * ciphertext.DX) + (self.y[3] * ciphertext.EX);
+        let SY = RY + (self.y[2] * ciphertext.DY) + (self.y[3] * ciphertext.EY);
         BlindedAuthCredentialWithSecretNonce {
             rprime,
             t,
             U,
-            S1,
-            S2,
+            SX,
+            SY,
         }
     }
 }
@@ -397,16 +397,16 @@ impl KeyPair<VoteCredential> {
 
         let (t, U, Vprime) = self.credential_core(&M, sho);
         let rprime = sho.get_scalar();
-        let R1 = rprime * RISTRETTO_BASEPOINT_POINT;
-        let R2 = rprime * public_key.Y + Vprime;
-        let S1 = R1 + (self.y[3] * ciphertext.D1) + (self.y[4] * ciphertext.E1);
-        let S2 = R2 + (self.y[3] * ciphertext.D2) + (self.y[4] * ciphertext.E2);
+        let RX = rprime * RISTRETTO_BASEPOINT_POINT;
+        let RY = rprime * public_key.Y + Vprime;
+        let SX = RX + (self.y[3] * ciphertext.DX) + (self.y[4] * ciphertext.EX);
+        let SY = RY + (self.y[3] * ciphertext.DY) + (self.y[4] * ciphertext.EY);
         BlindedVoteCredentialWithSecretNonce {
             rprime,
             t,
             U,
-            S1,
-            S2,
+            SX,
+            SY,
         }
     }
 }
@@ -417,8 +417,8 @@ impl BlindedAuthCredentialWithSecretNonce {
         BlindedAuthCredential {
             t: self.t,
             U: self.U,
-            S1: self.S1,
-            S2: self.S2,
+            SX: self.SX,
+            SY: self.SY,
         }
     }
 }
@@ -428,8 +428,8 @@ impl BlindedVoteCredentialWithSecretNonce {
         BlindedVoteCredential {
             t: self.t,
             U: self.U,
-            S1: self.S1,
-            S2: self.S2,
+            SX: self.SX,
+            SY: self.SY,
         }
     }
 }
@@ -438,7 +438,8 @@ impl BlindedVoteCredentialWithSecretNonce {
 mod tests {
     use crate::common::constants::*;
     use crate::crypto::proofs;
-
+    use crate::api::auth;
+    use crate::groups::{GroupMasterKey, GroupSecretParams};
     use super::*;
 
     #[test]
@@ -449,11 +450,12 @@ mod tests {
     }
 
     #[test]
-    fn test_mac() {
+    fn test_auth_cred_issuance() {
         let mut sho = Sho::new(b"Test_Credentials", b"");
         let serverKeypair = KeyPair::<AuthCredential>::generate(&mut sho);
         let clientEncryptionKeyPair = auth_credential_request::KeyPair::generate(&mut sho);
         let clientPubKey = clientEncryptionKeyPair.get_public_key();
+        let serverPubKey = serverKeypair.get_public_key();
 
         let uid_bytes = TEST_ARRAY_16;
         let expiration_time = 1678102259;
@@ -461,7 +463,7 @@ mod tests {
 
         let encryptedUID = clientEncryptionKeyPair.encrypt(uid, &mut sho);
         let ciphertext = encryptedUID.get_ciphertext();
-        let blinded_auth_credential= serverKeypair.create_blinded_auth_credential(clientPubKey, ciphertext, expiration_time, &mut sho);
+        let blinded_auth_credential_with_nonce= serverKeypair.create_blinded_auth_credential(clientPubKey, ciphertext, expiration_time, &mut sho);
         
 
 
@@ -469,7 +471,7 @@ mod tests {
             serverKeypair,
             clientPubKey,
             ciphertext,
-            blinded_auth_credential,
+            blinded_auth_credential_with_nonce,
             expiration_time,
             &mut sho,
         );
@@ -478,20 +480,36 @@ mod tests {
             serverKeypair.get_public_key(), 
             clientPubKey, 
             ciphertext, 
-            blinded_auth_credential.get_blinded_auth_credential(),
+            blinded_auth_credential_with_nonce.get_blinded_auth_credential(),
             expiration_time)
             .unwrap();
 
+        let mac_bytes = bincode::serialize(&blinded_auth_credential_with_nonce.get_blinded_auth_credential()).unwrap();
 
+        //println!("mac_bytes= {:#x?}", mac_bytes);
 
-        let mac_bytes = bincode::serialize(&blinded_auth_credential.get_blinded_auth_credential()).unwrap();
-
-        println!("mac_bytes= {:#x?}", mac_bytes);
         assert!(
             mac_bytes
                 == vec![
-                    0x2e,  0xf3,  0x98,  0xf1,  0x86,  0x77,  0xc7,  0xf7,  0x24,  0x40,  0x51,  0xaf,  0xe3,  0x9,  0x9b,  0xc3,  0x6b,  0xda,  0xfc,  0x98,  0xe9,  0x33,  0xbc,  0xe4,  0x22,  0xb8,  0xf1,  0x68,  0xb8,  0x1a,  0x9b,  0xd,  0xac,  0xf0,  0xeb,  0xca,  0xeb,  0xa4,  0xf1,  0xe9,  0x67,  0x31,  0xbc,  0xa,  0xc1,  0x3b,  0xbd,  0xfa,  0x82,  0x25,  0x17,  0xb,  0x18,  0xb9,  0x14,  0xf8,  0xcd,  0x93,  0x26,  0xa3,  0x42,  0xb1,  0xd,  0x5a,  0x46,  0x3b,  0x2,  0xa3,  0xaf,  0xff,  0x13,  0xb4,  0x2b,  0x5,  0x3c,  0xe6,  0xbb,  0x92,  0x4,  0x45,  0x4,  0xe4,  0x5b,  0xb9,  0xc5,  0x23,  0xab,  0xf,  0x82,  0x4,  0xcc,  0x9d,  0xf3,  0xc1,  0x77,  0x68,  0xe0,  0x7a,  0x15,  0xcf,  0x4f,  0x50,  0x4,  0xcf,  0x73,  0xb6,  0x87,  0x5c,  0xf2,  0xeb,  0xc4,  0x5d,  0x8b,  0xcb,  0xf0,  0xc9,  0x45,  0xd6,  0x39,  0xf9,  0x5f,  0x81,  0x71,  0x7c,  0x6a,  0x9e,  0xfe,  0x28,
+                    0x2e,  0xf3,  0x98,  0xf1,  0x86,  0x77,  0xc7,  0xf7,  0x24,  0x40,  0x51,  0xaf,  0xe3,  0x9,  0x9b,  0xc3,  0x6b,  0xda,  0xfc,  0x98,  0xe9,  0x33,  0xbc,  0xe4,  0x22,  0xb8,  0xf1,  0x68,  0xb8,  0x1a,  0x9b,  0xd,  0xac,  0xf0,  0xeb,  0xca,  0xeb,  0xa4,  0xf1,  0xe9,  0x67,  0x31,  0xbc,  0xa,  0xc1,  0x3b,  0xbd,  0xfa,  0x82,  0x25,  0x17,  0xb,  0x18,  0xb9,  0x14,  0xf8,  0xcd,  0x93,  0x26,  0xa3,  0x42,  0xb1,  0xd,  0x5a,  0x46,  0x3b,  0x2,  0xa3,  0xaf,  0xff,  0x13,  0xb4,  0x2b,  0x5,  0x3c,  0xe6,  0xbb,  0x92,  0x4,  0x45,  0x4,  0xe4,  0x5b,  0xb9,  0xc5,  0x23,  0xab,  0xf,  0x82,  0x4,  0xcc,  0x9d,  0xf3,  0xc1,  0x77,  0x68,  0xaa,  0x67,  0xe4,  0xf1,  0xe5,  0x73,  0xa6,  0x24,  0x8b,  0x3d,  0x3,  0xa3,  0x9d,  0x47,  0x6,  0x60,  0x99,  0x54,  0x57,  0x47,  0x6b,  0x6b,  0x2f,  0x3a,  0xcf,  0xc7,  0x75,  0x15,  0xb6,  0x9d,  0x28,  0x1b,
                 ]
+        );
+
+        let creds = clientEncryptionKeyPair.decrypt_blinded_auth_credential(blinded_auth_credential_with_nonce.get_blinded_auth_credential());
+
+
+        let master_key = GroupMasterKey::new(TEST_ARRAY_32_1);
+        let group_secret_params = GroupSecretParams::derive_from_master_key(master_key);
+
+        let uuid_ciphertext = group_secret_params.encrypt_uid_struct(uid);
+        
+        let proof = proofs::AuthCredentialPresentationProof::new(
+            serverPubKey,
+            group_secret_params.uid_enc_key_pair,
+            creds,
+            uid,
+            uuid_ciphertext.ciphertext,
+            &mut sho,
         );
     }
 

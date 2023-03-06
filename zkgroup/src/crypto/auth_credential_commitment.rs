@@ -69,15 +69,15 @@ impl CommitmentWithSecretNonce {
     ) -> CommitmentWithSecretNonce {
         let commitment_system = SystemParams::get_hardcoded();
 
-        let uid_struct::UidStruct { M1, M2, bytes } = uid_key;
+        let uid_struct::UidStruct { M2, M3, bytes } = uid_key;
         let j3 = Self::calc_j3(bytes);
-        let J1 = (j3 * commitment_system.G_j1) + M1;
-        let J2 = (j3 * commitment_system.G_j2) + M2;
+        let J1 = (j3 * commitment_system.G_j1) + M2;
+        let J2 = (j3 * commitment_system.G_j2) + M3;
         let J3 = j3 * commitment_system.G_j3;
         CommitmentWithSecretNonce { J1, J2, J3, j3 }
     }
 
-    pub fn get_profile_key_commitment(&self) -> Commitment {
+    pub fn get_auth_commitment(&self) -> Commitment {
         Commitment {
             J1: self.J1,
             J2: self.J2,
