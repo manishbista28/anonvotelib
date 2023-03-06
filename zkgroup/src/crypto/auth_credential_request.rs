@@ -1,8 +1,3 @@
-//
-// Copyright 2020-2022 Signal Messenger, LLC.
-// SPDX-License-Identifier: AGPL-3.0-only
-//
-
 #![allow(non_snake_case)]
 
 use crate::common::sho::*;
@@ -110,23 +105,30 @@ impl CiphertextWithSecretNonce {
 mod tests {
     use super::*;
     use crate::common::constants::*;
-    use crate::crypto::auth_credential_commitment;
 
     #[test]
-    fn test_request_response() {
+    fn test_key_pair_generation() {
         let mut sho = Sho::new(b"Test_Profile_Key_Credential_Request", b"");
 
-        // client
         let blind_key_pair = KeyPair::generate(&mut sho);
+        let calculated_base_point = blind_key_pair.y.invert() * blind_key_pair.Y;
 
-        // server and client
-        let uid_struct =
-            uid_struct::UidStruct::new( TEST_ARRAY_16);
-        let _ = auth_credential_commitment::CommitmentWithSecretNonce::new(
-            uid_struct
-        );
+        // Y = yG => G = y_inv * Y        
+        assert_eq!(calculated_base_point, RISTRETTO_BASEPOINT_POINT);
+    
+        let mut sho = Sho::new(b"Test_Profile_Key_Credential_Request", b"new_randomness");
+        let new_blind_key_pair = KeyPair::generate(&mut sho);
+        // new randomness => new keypair
+        assert_ne!(bincode::serialize(&blind_key_pair).unwrap(), bincode::serialize(&new_blind_key_pair).unwrap());
+    }
 
-        // client
+    #[test]
+    fn test_uid_encryption() {
+        let mut sho = Sho::new(b"Test_Profile_Key_Credential_Request", b"");
+        let blind_key_pair = KeyPair::generate(&mut sho);
+        let uid_struct = uid_struct::UidStruct::new( TEST_ARRAY_16);
+
         let _ = blind_key_pair.encrypt(uid_struct, &mut sho);
+        
     }
 }

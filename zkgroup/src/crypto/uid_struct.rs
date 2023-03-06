@@ -44,3 +44,15 @@ impl UidStruct {
         self.bytes
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::common::constants::TEST_ARRAY_16;
+    use super::*;
+
+    #[test]
+    fn test_uid_struct_init() {
+        let uid_struct = UidStruct::new(TEST_ARRAY_16);
+        println!("PARAMS = {:#x?}",bincode::serialize(&uid_struct.M1));
+    }
+}
