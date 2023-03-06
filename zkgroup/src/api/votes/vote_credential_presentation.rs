@@ -1,13 +1,13 @@
-// use crate::common::constants::*;
-// use crate::common::errors::*;
 use crate::common::simple_types::*;
-use crate::{ crypto};
 use serde::{Deserialize, Serialize};
-//TODO
+
+use crate::crypto::proofs::VoteCredentialPresentationProof;
+
 #[derive(Serialize, Deserialize)]
 pub struct VoteCredentialPresentation {
-    pub(crate) version: ReservedBytes,
-    //pub(crate) proof: crypto::proofs::VoteCredentialPresentationProof,
-    pub(crate) uid_enc_ciphertext: crypto::uid_encryption::Ciphertext,
-    pub(crate) vote_enc_ciphertext: crypto::vote_encryption::Ciphertext,
+    pub(crate) proof: VoteCredentialPresentationProof,
+    pub(crate) vote_type: VoteTypeBytes,
+    pub(crate) vote_id: VoteUniqIDBytes,
+    pub(crate) stake_weight: VoteStakeWeightBytes,
+    pub(crate) topic_id: VoteTopicIDBytes,
 }

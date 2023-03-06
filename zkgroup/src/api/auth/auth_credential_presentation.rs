@@ -8,8 +8,3 @@ pub struct AuthCredentialPresentation {
     pub(crate) uid_enc_ciphertext: crypto::uid_encryption::Ciphertext,
     pub(crate) redemption_time: CoarseRedemptionTime,
 }
-
-// TODO
-// expose uid_commitment just like redemption_time
-// check how uid_commitment is being computed, is j3 secure
-//

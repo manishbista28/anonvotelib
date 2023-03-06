@@ -49,6 +49,17 @@ pub struct AuthCredentialPresentationProof {
     poksho_proof: Vec<u8>,
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+pub struct VoteCredentialPresentationProof {
+    C_x0: RistrettoPoint,
+    C_x1: RistrettoPoint,
+    C_y1: RistrettoPoint,
+    C_y2: RistrettoPoint,
+    C_y3: RistrettoPoint,
+    C_y4: RistrettoPoint,
+    C_V: RistrettoPoint,
+    poksho_proof: Vec<u8>,
+}
 
 impl AuthCredentialIssuanceProof {
     pub fn get_poksho_statement() -> poksho::Statement {
@@ -534,3 +545,151 @@ impl VoteCredentialIssuanceProof {
         }
     }
 }
+
+impl VoteCredentialPresentationProof {
+    pub fn get_poksho_statement() -> poksho::Statement {
+        let mut st = poksho::Statement::new();
+
+        st.add("Z", &[("z", "I")]);
+        st.add("C_x1", &[("t", "C_x0"), ("z0", "G_x0"), ("z", "G_x1")]);
+        st.add("C_y1", &[("z", "G_y1")]);
+        st.add("C_y2", &[("z", "G_y2")]);
+        st.add("C_y3", &[("z", "G_y3")]);
+        st.add("C_y4", &[("z", "G_y4")]);
+        st
+    }
+
+    pub fn new(
+        credentials_public_key: credentials::PublicKey,
+        credential: credentials::VoteCredential,
+        vote_type: VoteTypeBytes,
+        vote_id: VoteUniqIDBytes,
+        stake_weight: VoteStakeWeightBytes,
+        topic_id: VoteTopicIDBytes,
+        sho: &mut Sho,
+    ) -> Self {
+        let credentials_system = credentials::SystemParams::get_hardcoded();
+        let uid_system = uid_encryption::SystemParams::get_hardcoded();
+
+        let z = sho.get_scalar();
+
+        let C_y1 = z * credentials_system.G_y[1];
+        let C_y2 = z * credentials_system.G_y[2];
+        let C_y3 = z * credentials_system.G_y[3];
+        let C_y4 = z * credentials_system.G_y[4];
+
+        let C_x0 = z * credentials_system.G_x0 + credential.U;
+        let C_V = z * credentials_system.G_V + credential.V;
+        let C_x1 = z * credentials_system.G_x1 + credential.t * credential.U;
+
+        let z0 = -z * credential.t;
+
+        let I = credentials_public_key.I;
+        let Z = z * I;
+
+        // Scalars listed in order of stmts for debugging
+        let mut scalar_args = poksho::ScalarArgs::new();
+        scalar_args.add("z", z);
+        scalar_args.add("t", credential.t);
+        scalar_args.add("z0", z0);
+
+        // Points listed in order of stmts for debugging
+        let mut point_args = poksho::PointArgs::new();
+        point_args.add("Z", Z);
+        point_args.add("I", I);
+        point_args.add("C_x0", C_x0);
+        point_args.add("C_x1", C_x1);
+        point_args.add("C_y1", C_y1);
+        point_args.add("C_y2", C_y2);
+        point_args.add("C_y3", C_y3);
+        point_args.add("C_y4", C_y4);
+        point_args.add("G_x0", credentials_system.G_x0);
+        point_args.add("G_x1", credentials_system.G_x1);
+        point_args.add("G_y1", credentials_system.G_y[1]);
+        point_args.add("G_y2", credentials_system.G_y[2]);
+        point_args.add("G_y3", credentials_system.G_y[3]);
+        point_args.add("G_y4", credentials_system.G_y[4]);
+
+        let poksho_proof = Self::get_poksho_statement()
+            .prove(
+                &scalar_args,
+                &point_args,
+                &[],
+                &sho.squeeze(RANDOMNESS_LEN)[..],
+            )
+            .unwrap();
+
+        Self {
+            C_x0,
+            C_x1,
+            C_y1,
+            C_y2,
+            C_y3,
+            C_y4,
+            C_V,
+            poksho_proof,
+        }
+    }
+
+    pub fn verify(
+        &self,
+        credentials_key_pair: credentials::KeyPair<credentials::VoteCredential>,
+        vote_type: VoteTypeBytes,
+        vote_id: VoteUniqIDBytes,
+        stake_weight: VoteStakeWeightBytes,
+        topic_id: VoteTopicIDBytes,
+    ) -> Result<(), ZkGroupVerificationFailure> {
+        let credentials_system = credentials::SystemParams::get_hardcoded();
+
+        let Self {
+            C_x0,
+            C_x1,
+            C_y1,
+            C_y2,
+            C_y3,
+            C_y4,
+            C_V,
+            poksho_proof,
+        } = self;
+
+        let (C_x0, C_x1, C_y1, C_y2, C_y3, C_y4, C_V) = (*C_x0, *C_x1, *C_y1, *C_y2, *C_y3, *C_y4, *C_V);
+
+        let credentials::KeyPair {
+            W,
+            x0,
+            x1,
+            y: OneBased([y1, y2, y3, y4, ..]),
+            I,
+            ..
+        } = credentials_key_pair;
+
+        let M1 = credentials::convert_to_point_vote_type(vote_type);
+        let M2 = credentials::convert_to_point_vote_id(vote_id);
+        let M3 = credentials::convert_to_point_vote_stake_weight(stake_weight);
+        let M4 = credentials::convert_to_point_vote_topic_id(topic_id);
+        
+        let Z = C_V - W - x0 * C_x0 - x1 * C_x1 - (y1 * (C_y1 + M1)) - (y2 * (C_y2 + M2))- (y3 * (C_y3 + M3)) - (y4 * (C_y4 + M4));
+
+        let mut point_args = poksho::PointArgs::new();
+        point_args.add("Z", Z);
+        point_args.add("I", I);
+        point_args.add("C_x0", C_x0);
+        point_args.add("C_x1", C_x1);
+        point_args.add("C_y1", C_y1);
+        point_args.add("C_y2", C_y2);
+        point_args.add("C_y3", C_y3);
+        point_args.add("C_y4", C_y4);
+        point_args.add("G_x0", credentials_system.G_x0);
+        point_args.add("G_x1", credentials_system.G_x1);
+        point_args.add("G_y1", credentials_system.G_y[1]);
+        point_args.add("G_y2", credentials_system.G_y[2]);
+        point_args.add("G_y3", credentials_system.G_y[3]);
+        point_args.add("G_y4", credentials_system.G_y[4]);
+
+        match Self::get_poksho_statement().verify_proof(poksho_proof, &point_args, &[]) {
+            Err(_) => Err(ZkGroupVerificationFailure),
+            Ok(_) => Ok(()),
+        }
+    }
+}
+
