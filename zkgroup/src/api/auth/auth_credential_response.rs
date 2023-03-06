@@ -12,4 +12,5 @@ pub struct AuthCredentialResponse {
     pub(crate) reserved: ReservedBytes,
     pub(crate) blinded_credential: crypto::credentials::BlindedAuthCredential,
     pub(crate) proof: crypto::proofs::AuthCredentialIssuanceProof,
+    pub(crate) expiration_time: u64,
 }

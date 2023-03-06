@@ -22,14 +22,14 @@ lazy_static! {
 
 #[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SystemParams {
-    pub(crate) G_a1: RistrettoPoint,
     pub(crate) G_a2: RistrettoPoint,
+    pub(crate) G_a3: RistrettoPoint,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct KeyPair {
-    pub(crate) a1: Scalar,
     pub(crate) a2: Scalar,
+    pub(crate) a3: Scalar,
     pub(crate) A: RistrettoPoint,
 }
 
@@ -40,8 +40,8 @@ pub struct PublicKey {
 
 #[derive(Copy, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Ciphertext {
-    pub(crate) E_A1: RistrettoPoint,
     pub(crate) E_A2: RistrettoPoint,
+    pub(crate) E_A3: RistrettoPoint,
 }
 
 impl SystemParams {
@@ -50,9 +50,9 @@ impl SystemParams {
             b"Signal_ZKGroup_20200424_Constant_UidEncryption_SystemParams_Generate",
             b"",
         );
-        let G_a1 = sho.get_point();
         let G_a2 = sho.get_point();
-        SystemParams { G_a1, G_a2 }
+        let G_a3 = sho.get_point();
+        SystemParams { G_a2, G_a3 }
     }
 
     pub fn get_hardcoded() -> SystemParams {
@@ -72,17 +72,17 @@ impl KeyPair {
     pub fn derive_from(sho: &mut Sho) -> Self {
         let system = SystemParams::get_hardcoded();
 
-        let a1 = sho.get_scalar();
         let a2 = sho.get_scalar();
+        let a3 = sho.get_scalar();
 
-        let A = a1 * system.G_a1 + a2 * system.G_a2;
-        KeyPair { a1, a2, A }
+        let A = a2 * system.G_a2 + a3 * system.G_a3;
+        KeyPair { a2, a3, A }
     }
 
     pub fn encrypt(&self, uid: uid_struct::UidStruct) -> Ciphertext {
-        let E_A1 = self.calc_E_A1(uid);
-        let E_A2 = (self.a2 * E_A1) + uid.M2;
-        Ciphertext { E_A1, E_A2 }
+        let E_A2 = self.calc_E_A2(uid);
+        let E_A3 = (self.a3 * E_A2) + uid.M3;
+        Ciphertext { E_A2, E_A3 }
     }
 
     // Might return VerificationFailure
@@ -90,13 +90,13 @@ impl KeyPair {
         &self,
         ciphertext: Ciphertext,
     ) -> Result<uid_struct::UidStruct, ZkGroupVerificationFailure> {
-        if ciphertext.E_A1 == RISTRETTO_BASEPOINT_POINT {
+        if ciphertext.E_A2 == RISTRETTO_BASEPOINT_POINT {
             return Err(ZkGroupVerificationFailure);
         }
-        match uid_struct::UidStruct::from_M2(ciphertext.E_A2 - (self.a2 * ciphertext.E_A1)) {
+        match uid_struct::UidStruct::from_M3(ciphertext.E_A3 - (self.a3 * ciphertext.E_A2)) {
             Err(_) => Err(ZkGroupVerificationFailure),
             Ok(decrypted_uid) => {
-                if ciphertext.E_A1 == self.calc_E_A1(decrypted_uid) {
+                if ciphertext.E_A2 == self.calc_E_A2(decrypted_uid) {
                     Ok(decrypted_uid)
                 } else {
                     Err(ZkGroupVerificationFailure)
@@ -105,8 +105,8 @@ impl KeyPair {
         }
     }
 
-    fn calc_E_A1(&self, uid: uid_struct::UidStruct) -> RistrettoPoint {
-        self.a1 * uid.M1
+    fn calc_E_A2(&self, uid: uid_struct::UidStruct) -> RistrettoPoint {
+        self.a2 * uid.M2
     }
 
     pub fn get_public_key(&self) -> PublicKey {
@@ -136,8 +136,8 @@ mod tests {
             Err(_) => (),
             _ => unreachable!(),
         };
-        let key_pair2: KeyPair = bincode::deserialize(&key_pair_bytes).unwrap();
-        assert!(key_pair == key_pair2);
+        let key_pairY: KeyPair = bincode::deserialize(&key_pair_bytes).unwrap();
+        assert!(key_pair == key_pairY);
 
         let uid = uid_struct::UidStruct::new(TEST_ARRAY_16);
         let ciphertext = key_pair.encrypt(uid);
@@ -147,7 +147,7 @@ mod tests {
         assert!(ciphertext_bytes.len() == 64);
         let ciphertext2: Ciphertext = bincode::deserialize(&ciphertext_bytes).unwrap();
         assert!(ciphertext == ciphertext2);
-        //println!("ciphertext_bytes = {:#x?}", ciphertext_bytes);
+        println!("ciphertext_bytes = {:#x?}", ciphertext_bytes);
         assert!(
             ciphertext_bytes
                 == vec![
