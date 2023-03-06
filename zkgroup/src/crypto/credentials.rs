@@ -520,6 +520,26 @@ mod tests {
 
     #[test]
     fn test_vote_cred_proofs() {
+        let mut sho = Sho::new(b"Test_Credentials", b"");
+        let serverKeypair = KeyPair::<VoteCredential>::generate(&mut sho);
+        let clientEncryptionKeyPair = vote_credential_request::KeyPair::generate(&mut sho);
+        let clientPubKey = clientEncryptionKeyPair.get_public_key();
+        let serverPubKey = serverKeypair.get_public_key();
 
+        let vote_type: VoteTypeBytes = [0]; // VOTE_TYPE_LEN
+        let vote_id: VoteUniqIDBytes = TEST_ARRAY_32; // VOTE_UNIQ_ID_LEN
+        let stake_weight: VoteStakeWeightBytes = TEST_ARRAY_32_1;
+        let topic_id: VoteTopicIDBytes = TEST_ARRAY_16;
+
+        let cipher_with_nonce =  clientEncryptionKeyPair.encrypt_vote_type_id(vote_type, vote_id, &mut sho);
+        let ciphertext = cipher_with_nonce.get_ciphertext();
+        let blinded_credential = serverKeypair.create_blinded_vote_credential(clientPubKey, ciphertext, &mut sho, stake_weight, topic_id);
+
+        _ = proofs::VoteCredentialIssuanceProof::new(serverKeypair, clientPubKey, ciphertext, blinded_credential, stake_weight, topic_id, &mut sho);
+    
+        // Presentation
+        let creds = clientEncryptionKeyPair.decrypt_blinded_vote_credential(blinded_credential.get_blinded_vote_credential());
+
+        _ = proofs::VoteCredentialPresentationProof::new(serverPubKey, creds, &mut sho);
     }
 }
