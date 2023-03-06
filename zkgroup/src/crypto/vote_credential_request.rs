@@ -5,11 +5,12 @@
 
 #![allow(non_snake_case)]
 
+use crate::{VoteUniqIDBytes, VoteTypeBytes};
 use crate::common::sho::*;
 use crate::crypto::credentials::{
     BlindedVoteCredential, VoteCredential,
 };
-use crate::crypto::vote_struct;
+use crate::crypto::credentials;
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
@@ -18,10 +19,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct KeyPair {
-    // private
     pub(crate) y: Scalar,
-
-    // public
     pub(crate) Y: RistrettoPoint,
 }
 
@@ -48,6 +46,7 @@ pub struct Ciphertext {
     pub(crate) E2: RistrettoPoint,
 }
 
+
 impl KeyPair {
     pub fn generate(sho: &mut Sho) -> Self {
         let y = sho.get_scalar();
@@ -59,18 +58,24 @@ impl KeyPair {
         PublicKey { Y: self.Y }
     }
 
-    pub fn encrypt(
+    pub fn encrypt_vote_type_id(
         &self,
-        profile_key_struct: vote_struct::VoteStruct,
+        vote_type: VoteTypeBytes,
+        vote_id: VoteUniqIDBytes,
         sho: &mut Sho,
     ) -> CiphertextWithSecretNonce {
+        
+        let type_pt = credentials::convert_to_point_vote_type(vote_type);
+        let id_pt = credentials::convert_to_point_vote_id(vote_id);
+
         let r1 = sho.get_scalar();
         let r2 = sho.get_scalar();
-        let D1 = r1 * RISTRETTO_BASEPOINT_POINT;
-        let E1 = r2 * RISTRETTO_BASEPOINT_POINT;
 
-        let D2 = r1 * (self.Y) + profile_key_struct.M1;
-        let E2 = r2 * (self.Y) + profile_key_struct.M2;
+        let D1 = r1 * RISTRETTO_BASEPOINT_POINT;
+        let E1 = r1 * RISTRETTO_BASEPOINT_POINT;
+
+        let D2 = r1 * (self.Y) + type_pt;
+        let E2 = r1 * (self.Y) + id_pt;
 
         CiphertextWithSecretNonce {
             r1,

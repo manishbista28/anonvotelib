@@ -6,6 +6,7 @@
 pub const NUM_AUTH_CRED_ATTRIBUTES: usize = 3;
 pub const NUM_PROFILE_KEY_CRED_ATTRIBUTES: usize = 4;
 pub const NUM_RECEIPT_CRED_ATTRIBUTES: usize = 2;
+pub const NUM_VOTES_ATTRIBUTES: usize = 4;
 
 pub const PRESENTATION_VERSION_1: u8 = 0;
 pub const PRESENTATION_VERSION_2: u8 = 1;
@@ -53,6 +54,11 @@ pub const UUID_CIPHERTEXT_LEN: usize = 65;
 pub const RANDOMNESS_LEN: usize = 32;
 pub const SIGNATURE_LEN: usize = 64;
 pub const UUID_LEN: usize = 16;
+
+pub const VOTE_TOPIC_ID_LEN: usize = 16;
+pub const VOTE_STAKE_WEIGHT_LEN: usize = 32;
+pub const VOTE_TYPE_LEN: usize = 1;
+pub const VOTE_UNIQ_ID_LEN: usize = 32;
 
 /// Seconds in a 24-hour cycle (ignoring leap seconds).
 pub const SECONDS_PER_DAY: u64 = 86400;

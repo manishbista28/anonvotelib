@@ -16,6 +16,8 @@ pub struct ServerSecretParams {
     pub(crate) reserved: ReservedBytes,
     pub(crate) auth_credentials_key_pair:
         crypto::credentials::KeyPair<crypto::credentials::AuthCredential>,
+    pub(crate) vote_credentials_key_pair:
+        crypto::credentials::KeyPair<crypto::credentials::VoteCredential>,
     sig_key_pair: crypto::signature::KeyPair,
 }
 
@@ -23,6 +25,7 @@ pub struct ServerSecretParams {
 pub struct ServerPublicParams {
     pub(crate) reserved: ReservedBytes,
     pub(crate) auth_credentials_public_key: crypto::credentials::PublicKey,
+    pub(crate) vote_credentials_public_key: crypto::credentials::PublicKey,
     sig_public_key: crypto::signature::PublicKey,
 }
 
@@ -33,12 +36,14 @@ impl ServerSecretParams {
             &randomness,
         );
 
-        let auth_credentials_key_pair = crypto::credentials::KeyPair::generate(&mut sho);
+        let auth_credentials_key_pair = crypto::credentials::KeyPair::<crypto::credentials::AuthCredential>::generate(&mut sho);
+        let vote_credentials_key_pair = crypto::credentials::KeyPair::<crypto::credentials::VoteCredential>::generate(&mut sho);
         let sig_key_pair = crypto::signature::KeyPair::generate(&mut sho);
 
         Self {
             reserved: Default::default(),
             auth_credentials_key_pair,
+            vote_credentials_key_pair,
             sig_key_pair,
         }
     }
@@ -47,6 +52,7 @@ impl ServerSecretParams {
         ServerPublicParams {
             reserved: Default::default(),
             auth_credentials_public_key: self.auth_credentials_key_pair.get_public_key(),
+            vote_credentials_public_key: self.vote_credentials_key_pair.get_public_key(),
             sig_public_key: self.sig_key_pair.get_public_key(),
         }
     }
@@ -57,6 +63,39 @@ impl ServerSecretParams {
             &randomness,
         );
         self.sig_key_pair.sign(message, &mut sho)
+    }    
+    
+    pub fn verify_auth_credential_presentation(
+        &self,
+        group_public_params: api::groups::GroupPublicParams,
+        presentation: &api::auth::AuthCredentialPresentation,
+        current_time_in_seconds: Timestamp,
+    ) -> Result<(), ZkGroupVerificationFailure> {
+        Self::check_auth_credential_redemption_time(
+            u64::from(presentation.redemption_time),
+            current_time_in_seconds,
+        )?;
+
+        presentation.proof.verify(
+            self.auth_credentials_key_pair,
+            group_public_params.uid_enc_public_key,
+            presentation.uid_enc_ciphertext,
+            presentation.redemption_time,
+        )
+    }
+
+    pub fn verify_vote_credential_presentation(
+        &self,
+        presentation: &api::votes::VoteCredentialPresentation,
+    ) -> Result<(), ZkGroupVerificationFailure> {
+
+        // TODO: ensure presentation params are consistent with server params and current operation
+        presentation.proof.verify(self.vote_credentials_key_pair,
+             presentation.vote_type, 
+             presentation.vote_id, 
+             presentation.stake_weight, 
+             presentation.topic_id
+        )
     }
 
     pub fn issue_auth_credential(
@@ -103,24 +142,55 @@ impl ServerSecretParams {
         })
     }
 
-    pub fn verify_auth_credential_presentation(
+    pub fn issue_vote_credential(
         &self,
+        randomness: RandomnessBytes,
+        request: &api::votes::VoteCredentialRequest,
+        vote_topic: VoteTopicIDBytes,
         group_public_params: api::groups::GroupPublicParams,
-        presentation: &api::auth::AuthCredentialPresentation,
-        current_time_in_seconds: Timestamp,
-    ) -> Result<(), ZkGroupVerificationFailure> {
-        Self::check_auth_credential_redemption_time(
-            u64::from(presentation.redemption_time),
-            current_time_in_seconds,
-        )?;
+    ) -> Result<api::votes::VoteCredentialResponse, ZkGroupVerificationFailure> {
+        let mut sho = Sho::new(
+            b"Signal_ZKGroup_20200424_Random_ServerSecretParams_IssueAuthCredential",
+            &randomness,
+        );
 
-        presentation.proof.verify(
-            self.auth_credentials_key_pair,
-            group_public_params.uid_enc_public_key,
-            presentation.uid_enc_ciphertext,
-            presentation.redemption_time,
-        )
+        assert_eq!(vote_topic, request.topic_id);
+        // TODO: verify request.vote_stake_weight is permissible
+
+        self.verify_auth_credential_presentation(
+            group_public_params, 
+            &request.auth_presentation, 
+            10 * SECONDS_PER_DAY).unwrap(); // TOOD: 0 and unwrap_err 
+        
+
+        let blinded_credential_with_secret_nonce = self
+            .vote_credentials_key_pair
+            .create_blinded_vote_credential(
+                request.public_key, 
+                request.ciphertext, 
+                &mut sho, 
+                request.stake_weight, 
+                request.topic_id, 
+            );
+
+        let proof = crypto::proofs::VoteCredentialIssuanceProof::new(
+            self.vote_credentials_key_pair,
+            request.public_key,
+            request.ciphertext,
+            blinded_credential_with_secret_nonce,
+            request.stake_weight,
+            request.topic_id,
+            & mut sho
+        );
+        Ok(api::votes::VoteCredentialResponse {
+            reserved: Default::default(),
+            blinded_credential: blinded_credential_with_secret_nonce
+                .get_blinded_vote_credential(),
+            proof,
+        })
     }
+
+    
     
     // TODO: redemption time value update from 2 to different
     /// Checks that `current_time_in_seconds` is within the validity window defined by
@@ -241,6 +311,100 @@ impl ServerPublicParams {
             proof,
             uid_enc_ciphertext: uuid_ciphertext.ciphertext,
             redemption_time: auth_credential.redemption_time,
+        }
+    }
+
+    pub fn create_vote_credential_request_context(
+        &self,
+        randomness: RandomnessBytes,
+        vote_type: VoteTypeBytes,
+        topic_id: VoteTopicIDBytes, 
+        stake_weight: VoteStakeWeightBytes,
+        auth_presentation: api::auth::AuthCredentialPresentation,
+    ) -> api::votes::VoteCredentialRequestContext {
+        let mut sho = Sho::new(
+            b"Signal_ZKGroup_20200424_Random_ServerPublicParams_CreateAuthCredentialRequestContext",
+            &randomness,
+        );
+        let mut vote_id = [0u8; VOTE_UNIQ_ID_LEN];
+        vote_id.copy_from_slice(&sho.squeeze(VOTE_UNIQ_ID_LEN));
+        let key_pair = crypto::vote_credential_request::KeyPair::generate(&mut sho);
+        let ciphertext_with_secret_nonce = key_pair.encrypt_vote_type_id(vote_type, vote_id, &mut sho);
+
+        api::votes::VoteCredentialRequestContext {
+            reserved: Default::default(),
+            vote_type,
+            vote_id,
+            stake_weight,
+            topic_id,
+            key_pair,
+            ciphertext_with_secret_nonce,
+            auth_presentation: auth_presentation,
+        }
+    }
+
+    pub fn receive_vote_credential(
+        &self,
+        request: &api::votes::VoteCredentialRequestContext,
+        response: &api::votes::VoteCredentialResponse,
+    ) -> Result<api::votes::VoteCredential, ZkGroupVerificationFailure> {
+        response.proof.verify(
+            self.auth_credentials_public_key,
+            request.key_pair.get_public_key(),
+            request.ciphertext_with_secret_nonce.get_ciphertext(),
+            response.blinded_credential,
+            request.stake_weight,
+            request.topic_id,
+        )?;
+
+        let credential = request
+            .key_pair
+            .decrypt_blinded_vote_credential(response.blinded_credential);
+        let vote_type = request.vote_type.clone();
+        let vote_id = request.vote_id.clone();
+        let stake_weight = request.stake_weight.clone();
+        let topic_id = request.topic_id.clone();
+
+        Ok(api::votes::VoteCredential{
+            reserved: Default::default(),
+            credential,
+            vote_type,
+            vote_id,
+            stake_weight,
+            topic_id,
+        })
+    }
+
+
+    pub fn create_vote_credential_presentation(
+        &self,
+        randomness: RandomnessBytes,
+        response: api::votes::VoteCredential,
+    ) -> api::votes::VoteCredentialPresentation {
+        let mut sho = Sho::new(
+            b"Signal_ZKGroup_20220120_Random_ServerPublicParams_CreateAuthCredentialPresentationV2",
+            &randomness,
+        );
+        
+        let proof = crypto::proofs::VoteCredentialPresentationProof::new(
+            self.vote_credentials_public_key,
+            response.credential,
+            response.vote_type,
+            response.vote_id,
+            response.stake_weight,
+            response.topic_id,
+            &mut sho,
+        );
+        let vtype = response.vote_type.clone();
+        let vid = response.vote_id.clone();
+        let vwt = response.stake_weight.clone();
+        let vtid = response.topic_id.clone();
+        api::votes::VoteCredentialPresentation {
+            proof,
+            vote_type: vtype,
+            vote_id: vid,
+            stake_weight: vwt,
+            topic_id: vtid,
         }
     }
 
