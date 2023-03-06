@@ -96,11 +96,11 @@ impl AuthCredentialIssuanceProof {
         request_public_key: auth_credential_request::PublicKey,
         request: auth_credential_request::Ciphertext,
         blinded_credential: credentials::BlindedAuthCredentialWithSecretNonce,
-        redemption_time: CoarseRedemptionTime,
+        expiration_time: u64,
         sho: &mut Sho,
     ) -> Self {
         let credentials_system = credentials::SystemParams::get_hardcoded();
-        let redemption_time_scalar = encode_redemption_time(redemption_time);
+        let expiration_time_scalar = encode_timestamp(expiration_time);
 
         let mut scalar_args = poksho::ScalarArgs::new();
         scalar_args.add("w", key_pair.w);
@@ -131,7 +131,7 @@ impl AuthCredentialIssuanceProof {
         point_args.add("Y", request_public_key.Y);
         point_args.add("U", blinded_credential.U);
         point_args.add("tU", blinded_credential.t * blinded_credential.U);
-        point_args.add("M3", redemption_time_scalar * credentials_system.G_m2);
+        point_args.add("M3", expiration_time_scalar * credentials_system.G_m3);
 
 
         let poksho_proof = Self::get_poksho_statement()
@@ -151,10 +151,10 @@ impl AuthCredentialIssuanceProof {
         request_public_key: auth_credential_request::PublicKey,
         request: auth_credential_request::Ciphertext,
         blinded_credential: credentials::BlindedAuthCredential,
-        redemption_time: CoarseRedemptionTime,
+        expiration_time: u64,
     ) -> Result<(), ZkGroupVerificationFailure> {
         let credentials_system = credentials::SystemParams::get_hardcoded();
-        let redemption_time_scalar = encode_redemption_time(redemption_time);
+        let expiration_time_scalar = encode_timestamp(expiration_time);
 
         let mut point_args = poksho::PointArgs::new();
         point_args.add("C_W", credentials_public_key.C_W);
@@ -175,7 +175,7 @@ impl AuthCredentialIssuanceProof {
         point_args.add("Y", request_public_key.Y);
         point_args.add("U", blinded_credential.U);
         point_args.add("tU", blinded_credential.t * blinded_credential.U);
-        point_args.add("M3", redemption_time_scalar * credentials_system.G_m2);
+        point_args.add("M3", expiration_time_scalar * credentials_system.G_m3);
 
 
         match Self::get_poksho_statement().verify_proof(&self.poksho_proof, &point_args, &[]) {
@@ -269,6 +269,7 @@ impl AuthCredentialPresentationProof {
         st.add("C_x1", &[("t", "C_x0"), ("z0", "G_x0"), ("z", "G_x1")]);
         st.add("A", &[("a1", "G_a1"), ("a2", "G_a2")]);
         st.add("C_y2-E_A2", &[("z", "G_y2"), ("a2", "-E_A1")]);
+        st.add("C_y3", &[("z", "G_y3")]);
         st
     }
 
@@ -278,12 +279,12 @@ impl AuthCredentialPresentationProof {
         credential: credentials::AuthCredential,
         uid: uid_struct::UidStruct,
         uid_ciphertext: uid_encryption::Ciphertext,
-        redemption_time: CoarseRedemptionTime,
+        expiration_time: u64,
         sho: &mut Sho,
     ) -> Self {
         let credentials_system = credentials::SystemParams::get_hardcoded();
         let uid_system = uid_encryption::SystemParams::get_hardcoded();
-        let M = credentials::convert_to_points_uid_struct(uid, redemption_time);
+        let M = credentials::convert_to_points_uid_struct(uid, expiration_time);
 
         let z = sho.get_scalar();
 
@@ -352,7 +353,7 @@ impl AuthCredentialPresentationProof {
         credentials_key_pair: credentials::KeyPair<credentials::AuthCredential>,
         uid_enc_public_key: uid_encryption::PublicKey,
         uid_ciphertext: uid_encryption::Ciphertext,
-        redemption_time: CoarseRedemptionTime,
+        expiration_time: u64,
     ) -> Result<(), ZkGroupVerificationFailure> {
         let enc_system = uid_encryption::SystemParams::get_hardcoded();
         let credentials_system = credentials::SystemParams::get_hardcoded();
@@ -378,7 +379,7 @@ impl AuthCredentialPresentationProof {
             ..
         } = credentials_key_pair;
 
-        let m3 = encode_redemption_time(redemption_time);
+        let m3 = encode_timestamp(expiration_time);
         let M3 = m3 * credentials_system.G_m3;
         let Z = C_V - W - x0 * C_x0 - x1 * C_x1 - y1 * C_y1 - y2 * C_y2- y3 * (C_y3 + M3);
 
