@@ -29,7 +29,7 @@ impl VoteCredentialRequestContext {
         let presentation_clone  = api::auth::AuthCredentialPresentation {
             proof: self.auth_presentation.proof.clone(),
             uid_enc_ciphertext: self.auth_presentation.uid_enc_ciphertext.clone(),
-            redemption_time: self.auth_presentation.redemption_time.clone()
+            expiration_time: self.auth_presentation.expiration_time.clone()
         }; // TODO: why clone ?
         api::votes::VoteCredentialRequest {
             reserved: Default::default(),
