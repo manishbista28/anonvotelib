@@ -4,9 +4,9 @@
 //
 
 #[derive(Debug, displaydoc::Display)]
-/// Verification failure in zkgroup
+/// Verification failure in zkvote
 pub struct ZkGroupVerificationFailure;
 
 #[derive(Debug, displaydoc::Display)]
-/// Deserialization failure in zkgroup
+/// Deserialization failure in zkvote
 pub struct ZkGroupDeserializationFailure;

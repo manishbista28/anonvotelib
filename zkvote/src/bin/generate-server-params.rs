@@ -6,7 +6,7 @@
 use std::io::Read;
 
 use rand::Rng;
-use zkgroup::{ServerSecretParams, RANDOMNESS_LEN};
+use zkvote::{ServerSecretParams, RANDOMNESS_LEN};
 
 fn main() {
     let mut old_secret_base64 = String::new();

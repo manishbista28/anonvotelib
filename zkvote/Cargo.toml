@@ -4,7 +4,7 @@
 #
 
 [package]
-name = "zkgroup"
+name = "zkvote"
 version = "0.9.0"
 authors = ["Signal Messenger LLC"]
 edition = "2018"
@@ -39,7 +39,7 @@ branch = "lizard2"
 criterion = "0.4"
 
 [[bench]]
-name = "zkgroup_benchmarks"
+name = "zkvote_benchmarks"
 harness = false
 
 [[bin]]
