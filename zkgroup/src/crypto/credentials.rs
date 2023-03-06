@@ -15,11 +15,11 @@ use crate::common::sho::*;
 use crate::common::simple_types::*;
 use crate::crypto::uid_struct;
 use crate::crypto::{
-    auth_credential_request, vote_credential_request, auth_credential_commitment,
+    auth_credential_request, vote_credential_request,
 };
 
 use crate::{
-    NUM_AUTH_CRED_ATTRIBUTES, NUM_VOTES_ATTRIBUTES, CoarseRedemptionTime, 
+    NUM_AUTH_CRED_ATTRIBUTES, NUM_VOTES_ATTRIBUTES, 
 };
 
 use lazy_static::lazy_static;
@@ -169,11 +169,11 @@ pub struct BlindedVoteCredential {
 
 pub(crate) fn convert_to_points_uid_struct(
     uid: uid_struct::UidStruct,
-    redemption_time: CoarseRedemptionTime,
+    expiration_time: u64,
 ) -> Vec<RistrettoPoint> {
     let system = SystemParams::get_hardcoded();
-    let redemption_time_scalar = encode_redemption_time(redemption_time);
-    vec![uid.M1, uid.M2, redemption_time_scalar * system.G_m3]
+    let expiration_time_scalar = encode_timestamp(expiration_time);
+    vec![uid.M1, uid.M2, expiration_time_scalar * system.G_m3]
 }
 
 pub(crate) fn convert_to_point_vote_type(
@@ -398,12 +398,12 @@ impl KeyPair<AuthCredential> {
         &self,
         public_key: auth_credential_request::PublicKey,
         ciphertext: auth_credential_request::Ciphertext,
-        redemption_time: CoarseRedemptionTime,
+        expiration_time: u64,
         sho: &mut Sho,
     ) -> BlindedAuthCredentialWithSecretNonce {
         let system = SystemParams::get_hardcoded();
-        let redemption_time_scalar = encode_redemption_time(redemption_time);
-        let M = [redemption_time_scalar * system.G_m3];
+        let expiration_time_scalar = encode_timestamp(expiration_time);
+        let M = [expiration_time_scalar * system.G_m3];
 
         let (t, U, Vprime) = self.credential_core(&M, sho);
         let rprime = sho.get_scalar();

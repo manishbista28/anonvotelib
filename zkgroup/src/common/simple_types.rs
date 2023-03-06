@@ -5,6 +5,7 @@
 
 use crate::common::constants::*;
 use curve25519_dalek::scalar::Scalar;
+use crate::common::sho::Sho;
 
 pub type AesKeyBytes = [u8; AES_KEY_LEN];
 pub type GroupMasterKeyBytes = [u8; GROUP_MASTER_KEY_LEN];
@@ -47,6 +48,14 @@ pub fn encode_redemption_time(redemption_time: u32) -> Scalar {
     let mut scalar_bytes: [u8; 32] = Default::default();
     scalar_bytes[0..4].copy_from_slice(&redemption_time.to_be_bytes());
     Scalar::from_bytes_mod_order(scalar_bytes)
+}
+
+pub fn encode_timestamp(timestamp: u64) -> Scalar {
+    let mut sho = Sho::new(
+        b"Signal_ZKGroup_20220524_Timestamp_Calc_m",
+        &timestamp.to_be_bytes(),
+    );
+    sho.get_scalar()
 }
 
 pub fn encode_vote_bytes(vote_bytes: VoteTypeBytes) -> Scalar {
