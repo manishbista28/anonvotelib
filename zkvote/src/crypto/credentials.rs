@@ -8,7 +8,6 @@ use serde::{Deserialize, Serialize};
 use crate::common::array_utils::{ArrayLike, OneBased};
 use crate::common::sho::*;
 use crate::common::simple_types::*;
-use crate::crypto::uid_struct;
 use crate::crypto::{
     auth_credential_request, vote_credential_request,
 };
@@ -216,7 +215,7 @@ pub(crate) fn convert_to_point_auth_commitment(
     combined_vec.append(&mut enc_j2);
     combined_vec.append(&mut enc_j3);
     let mut sho = Sho::new(
-        b"Signal_ZKGroup_20200424_Random_Commitment_Generate",
+        b"LibVote_zkvote_20230306_Random_Commitment_Generate",
         &combined_vec,
     );
     let mut point_bytes = [0u8; 32];
@@ -443,7 +442,8 @@ mod tests {
     use crate::crypto::auth_credential_commitment;
     use crate::groups::{GroupMasterKey, GroupSecretParams};
     use super::*;
-
+    use crate::crypto::uid_struct::UidStruct;
+    
     #[test]
     fn test_system() {
         let params = SystemParams::generate();
@@ -461,7 +461,7 @@ mod tests {
 
         let uid_bytes = TEST_ARRAY_16;
         let expiration_time = 1678102259;
-        let uid = uid_struct::UidStruct::new(uid_bytes);
+        let uid = UidStruct::new(uid_bytes);
 
         let commitment_with_nonce = auth_credential_commitment::CommitmentWithSecretNonce::new(uid);
 
@@ -513,7 +513,6 @@ mod tests {
             creds,
             uid,
             uuid_ciphertext.ciphertext,
-            &mut sho,
         ); 
     }
 

@@ -47,7 +47,7 @@ pub struct Ciphertext {
 impl SystemParams {
     pub fn generate() -> Self {
         let mut sho = Sho::new(
-            b"Signal_ZKGroup_20200424_Constant_UidEncryption_SystemParams_Generate",
+            b"LibVote_zkvote_20230306_Constant_UidEncryption_SystemParams_Generate",
             b"",
         );
         let G_a2 = sho.get_point();
@@ -89,17 +89,17 @@ impl KeyPair {
     pub fn decrypt(
         &self,
         ciphertext: Ciphertext,
-    ) -> Result<uid_struct::UidStruct, ZkGroupVerificationFailure> {
+    ) -> Result<uid_struct::UidStruct, ZkVerificationFailure> {
         if ciphertext.E_A2 == RISTRETTO_BASEPOINT_POINT {
-            return Err(ZkGroupVerificationFailure);
+            return Err(ZkVerificationFailure);
         }
         match uid_struct::UidStruct::from_M3(ciphertext.E_A3 - (self.a3 * ciphertext.E_A2)) {
-            Err(_) => Err(ZkGroupVerificationFailure),
+            Err(_) => Err(ZkVerificationFailure),
             Ok(decrypted_uid) => {
                 if ciphertext.E_A2 == self.calc_E_A2(decrypted_uid) {
                     Ok(decrypted_uid)
                 } else {
-                    Err(ZkGroupVerificationFailure)
+                    Err(ZkVerificationFailure)
                 }
             }
         }
