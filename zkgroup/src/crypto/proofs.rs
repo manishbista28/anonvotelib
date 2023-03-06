@@ -94,7 +94,7 @@ impl AuthCredentialIssuanceProof {
     pub fn new(
         key_pair: credentials::KeyPair<credentials::AuthCredential>,
         request_public_key: auth_credential_request::PublicKey,
-        request: auth_credential_request::Ciphertext,
+        ciphertext: auth_credential_request::Ciphertext,
         blinded_credential: credentials::BlindedAuthCredentialWithSecretNonce,
         expiration_time: u64,
         sho: &mut Sho,
@@ -123,11 +123,11 @@ impl AuthCredentialIssuanceProof {
         point_args.add("G_y2", credentials_system.G_y[2]);
         point_args.add("G_y3", credentials_system.G_y[3]);
         point_args.add("S1", blinded_credential.S1);
-        point_args.add("D1", request.D1);
-        point_args.add("E1", request.E1);
+        point_args.add("D1", ciphertext.D1);
+        point_args.add("E1", ciphertext.E1);
         point_args.add("S2", blinded_credential.S2);
-        point_args.add("D2", request.D2);
-        point_args.add("E2", request.E2);
+        point_args.add("D2", ciphertext.D2);
+        point_args.add("E2", ciphertext.E2);
         point_args.add("Y", request_public_key.Y);
         point_args.add("U", blinded_credential.U);
         point_args.add("tU", blinded_credential.t * blinded_credential.U);
@@ -149,7 +149,7 @@ impl AuthCredentialIssuanceProof {
         &self,
         credentials_public_key: credentials::PublicKey,
         request_public_key: auth_credential_request::PublicKey,
-        request: auth_credential_request::Ciphertext,
+        ciphertext: auth_credential_request::Ciphertext,
         blinded_credential: credentials::BlindedAuthCredential,
         expiration_time: u64,
     ) -> Result<(), ZkGroupVerificationFailure> {
@@ -167,11 +167,11 @@ impl AuthCredentialIssuanceProof {
         point_args.add("G_y2", credentials_system.G_y[2]);
         point_args.add("G_y3", credentials_system.G_y[3]);
         point_args.add("S1", blinded_credential.S1);
-        point_args.add("D1", request.D1);
-        point_args.add("E1", request.E1);
+        point_args.add("D1", ciphertext.D1);
+        point_args.add("E1", ciphertext.E1);
         point_args.add("S2", blinded_credential.S2);
-        point_args.add("D2", request.D2);
-        point_args.add("E2", request.E2);
+        point_args.add("D2", ciphertext.D2);
+        point_args.add("E2", ciphertext.E2);
         point_args.add("Y", request_public_key.Y);
         point_args.add("U", blinded_credential.U);
         point_args.add("tU", blinded_credential.t * blinded_credential.U);
