@@ -12,9 +12,9 @@ fn benchmark_integration_auth(c: &mut Criterion) {
     // let server_public_params = server_secret_params.get_public_params();
 
     // let master_key = zkvote::groups::GroupMasterKey::new(zkvote::TEST_ARRAY_32_1);
-    // let group_secret_params =
+    // let client_secret_params =
     //     zkvote::groups::GroupSecretParams::derive_from_master_key(master_key);
-    // let group_public_params = group_secret_params.get_public_params();
+    // let client_public_params = client_secret_params.get_public_params();
 
     // let uid = zkvote::TEST_ARRAY_16;
     // let redemption_time = 123456u32;
@@ -39,15 +39,15 @@ fn benchmark_integration_auth(c: &mut Criterion) {
     //     })
     // });
 
-    // let uuid_ciphertext = group_secret_params.encrypt_uuid(uid);
-    // let plaintext = group_secret_params.decrypt_uuid(uuid_ciphertext).unwrap();
+    // let uuid_ciphertext = client_secret_params.encrypt_uuid(uid);
+    // let plaintext = client_secret_params.decrypt_uuid(uuid_ciphertext).unwrap();
     // assert!(plaintext == uid);
 
     // let randomness = zkvote::TEST_ARRAY_32_5;
 
     // let presentation_v2 = server_public_params.create_auth_credential_presentation_v2(
     //     randomness,
-    //     group_secret_params,
+    //     client_secret_params,
     //     auth_credential,
     // );
 
@@ -55,7 +55,7 @@ fn benchmark_integration_auth(c: &mut Criterion) {
     //     b.iter(|| {
     //         server_public_params.create_auth_credential_presentation_v2(
     //             randomness,
-    //             group_secret_params,
+    //             client_secret_params,
     //             auth_credential,
     //         )
     //     })
@@ -68,7 +68,7 @@ fn benchmark_integration_auth(c: &mut Criterion) {
     //     b.iter(|| {
     //         server_secret_params
     //             .verify_auth_credential_presentation_v2(
-    //                 group_public_params,
+    //                 client_public_params,
     //                 &presentation_v2,
     //                 redemption_time,
     //             )

@@ -503,13 +503,13 @@ mod tests {
 
 
         let master_key = GroupMasterKey::new(TEST_ARRAY_32_1);
-        let group_secret_params = GroupSecretParams::derive_from_master_key(master_key);
+        let client_secret_params = GroupSecretParams::derive_from_master_key(master_key);
 
-        let uuid_ciphertext = group_secret_params.encrypt_uid_struct(uid);
+        let uuid_ciphertext = client_secret_params.encrypt_uid_struct(uid);
         
         let _ = proofs::AuthCredentialPresentationProof::new(
             serverPubKey,
-            group_secret_params.uid_enc_key_pair,
+            client_secret_params.uid_enc_key_pair,
             creds,
             uid,
             uuid_ciphertext.ciphertext,

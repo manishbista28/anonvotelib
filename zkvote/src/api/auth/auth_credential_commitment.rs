@@ -12,3 +12,12 @@ pub struct AuthCredentialCommitment {
     pub(crate) reserved: ReservedBytes,
     pub(crate) commitment: crypto::auth_credential_commitment::Commitment,
 }
+
+impl AuthCredentialCommitment {
+    pub fn new(commitment: crypto::auth_credential_commitment::Commitment)-> Self {
+        AuthCredentialCommitment { 
+            reserved: Default::default(), 
+            commitment: commitment, 
+        }
+    }
+}
