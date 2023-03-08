@@ -67,7 +67,7 @@ impl ServerSecretParams {
     
     pub fn verify_auth_credential_presentation(
         &self,
-        group_public_params: api::groups::GroupPublicParams,
+        client_public_params: api::groups::GroupPublicParams,
         presentation: &api::auth::AuthCredentialPresentation,
         current_time_in_seconds: u64,
     ) -> Result<(), ZkVerificationFailure> {
@@ -78,7 +78,7 @@ impl ServerSecretParams {
 
         presentation.proof.verify(
             self.auth_credentials_key_pair,
-            group_public_params.uid_enc_public_key,
+            client_public_params.uid_enc_public_key,
             presentation.uid_enc_ciphertext,
             presentation.expiration_time,
         )
@@ -148,7 +148,7 @@ impl ServerSecretParams {
         randomness: RandomnessBytes,
         request: &api::votes::VoteCredentialRequest,
         vote_topic: VoteTopicIDBytes,
-        group_public_params: api::groups::GroupPublicParams,
+        client_public_params: api::groups::GroupPublicParams,
     ) -> Result<api::votes::VoteCredentialResponse, ZkVerificationFailure> {
         let mut sho = Sho::new(
             b"LibVote_zkvote_20230306_Random_ServerSecretParams_IssueAuthCredential",
@@ -159,7 +159,7 @@ impl ServerSecretParams {
         // TODO: verify request.vote_stake_weight is permissible
 
         self.verify_auth_credential_presentation(
-            group_public_params, 
+            client_public_params, 
             &request.auth_presentation, 
             10 * SECONDS_PER_DAY).unwrap(); // TOOD: 0 and unwrap_err 
         
@@ -242,7 +242,6 @@ impl ServerPublicParams {
         &self,
         client_request: &api::auth::AuthCredentialRequestContext,
         response: &api::auth::AuthCredentialResponse,
-        expiration_time: u64,
     ) -> Result<api::auth::AuthCredential, ZkVerificationFailure> {
         response.proof.verify(
             self.auth_credentials_public_key,
@@ -260,21 +259,21 @@ impl ServerPublicParams {
             reserved: Default::default(),
             credential,
             uid_bytes: client_request.uid_bytes,
-            expiration_time,
+            expiration_time: response.expiration_time,
         })
     }
 
     pub fn create_auth_credential_presentation(
         &self,
-        group_secret_params: api::groups::GroupSecretParams,
+        client_secret_params: api::groups::GroupSecretParams,
         auth_credential: api::auth::AuthCredential,
     ) -> api::auth::AuthCredentialPresentation {
         let uid = crypto::uid_struct::UidStruct::new(auth_credential.uid_bytes);
-        let uuid_ciphertext = group_secret_params.encrypt_uid_struct(uid);
+        let uuid_ciphertext = client_secret_params.encrypt_uid_struct(uid);
         
         let proof = crypto::proofs::AuthCredentialPresentationProof::new(
             self.auth_credentials_public_key,
-            group_secret_params.uid_enc_key_pair,
+            client_secret_params.uid_enc_key_pair,
             auth_credential.credential,
             uid,
             uuid_ciphertext.ciphertext,
@@ -322,7 +321,7 @@ impl ServerPublicParams {
         response: &api::votes::VoteCredentialResponse,
     ) -> Result<api::votes::VoteCredential, ZkVerificationFailure> {
         response.proof.verify(
-            self.auth_credentials_public_key,
+            self.vote_credentials_public_key,
             request.key_pair.get_public_key(),
             request.ciphertext_with_secret_nonce.get_ciphertext(),
             response.blinded_credential,

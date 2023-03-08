@@ -128,7 +128,7 @@ mod tests {
     }
 
     #[test]
-    fn test_uid_encryption() {
+    fn test_uid() {
         let mut sho = Sho::new(b"Test_Profile_Key_Credential_Request", b"");
         let blind_key_pair = KeyPair::generate(&mut sho);
         let uid_struct = uid_struct::UidStruct::new( TEST_ARRAY_16);

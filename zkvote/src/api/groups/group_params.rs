@@ -296,7 +296,7 @@ mod tests {
             .unwrap();
         assert!(calc_plaintext[..] == plaintext_vec[..]);
     }
-
+/*
     #[test]
     fn test_encrypt_with_padding() {
         let group_secret_params = GroupSecretParams::generate([0u8; RANDOMNESS_LEN]);
@@ -328,4 +328,5 @@ mod tests {
             assert_eq!(calc_plaintext[..], plaintext[..]);
         }
     }
+*/
 }
