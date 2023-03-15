@@ -53,6 +53,12 @@ pub struct VoteCredentialPresentationProof {
     poksho_proof: Vec<u8>,
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+pub struct VoteCredentialChallengeProof {
+    poksho_proof: Vec<u8>,
+}
+
+
 impl AuthCredentialIssuanceProof {
     pub fn get_poksho_statement() -> poksho::Statement {
         let mut st = poksho::Statement::new();
@@ -686,3 +692,122 @@ impl VoteCredentialPresentationProof {
     }
 }
 
+
+impl VoteCredentialChallengeProof {
+    pub fn get_poksho_statement() -> poksho::Statement {
+        let mut st = poksho::Statement::new();
+        st.add("C_x0_x0", &[("x0", "C_x0")]);
+        st.add("G_x0_x0", &[("x0", "G_x0")]);
+        st.add("C_x1_x1", &[("x1", "C_x1")]);
+        st.add("G_x1_x1", &[("x1", "G_x1")]);
+        st.add("C_y1_y1", &[("y1", "C_y1")]);
+        st.add("G_y1_y1", &[("y1", "G_y1")]);
+        st.add("C_y2_y2", &[("y2", "C_y2")]);
+        st.add("G_y2_y2", &[("y2", "G_y2")]);
+        st.add("C_y3_y3", &[("y3", "C_y3")]);
+        st.add("G_y3_y3", &[("y3", "G_y3")]);
+        st.add("C_y4_y4", &[("y4", "C_y4")]);
+        st.add("G_y4_y4", &[("y4", "G_y4")]);
+        st
+    }
+
+
+    pub fn new(
+        server_key_pair: credentials::KeyPair<credentials::VoteCredential>,
+        user_commitments: [RistrettoPoint; 6],
+        private_calculated_commitments: [RistrettoPoint; 6],
+        public_commitments: [RistrettoPoint; 6],
+        sho: &mut Sho,
+    ) -> Self {
+        let credentials_system = credentials::SystemParams::get_hardcoded();
+
+        let mut scalar_args = poksho::ScalarArgs::new();
+        scalar_args.add("x0", server_key_pair.x0);
+        scalar_args.add("x1", server_key_pair.x1);
+        scalar_args.add("y1", server_key_pair.y[1]);
+        scalar_args.add("y2", server_key_pair.y[2]);
+        scalar_args.add("y3", server_key_pair.y[3]);
+        scalar_args.add("y4", server_key_pair.y[4]);
+
+        let mut point_args = poksho::PointArgs::new();
+        point_args.add("G_x0", credentials_system.G_x0);
+        point_args.add("G_x1", credentials_system.G_x1);
+        point_args.add("G_y1", credentials_system.G_y[1]);
+        point_args.add("G_y2", credentials_system.G_y[2]);
+        point_args.add("G_y3", credentials_system.G_y[3]);
+        point_args.add("G_y4", credentials_system.G_y[4]);
+        point_args.add("C_x0", user_commitments[0]);
+        point_args.add("C_x1", user_commitments[1]);
+        point_args.add("C_y1", user_commitments[2]);
+        point_args.add("C_y2", user_commitments[3]);
+        point_args.add("C_y3", user_commitments[4]);
+        point_args.add("C_y4", user_commitments[5]);
+
+        point_args.add("C_x0_x0", private_calculated_commitments[0]);
+        point_args.add("C_x1_x1", private_calculated_commitments[1]);
+        point_args.add("C_y1_y1", private_calculated_commitments[2]);
+        point_args.add("C_y2_y2", private_calculated_commitments[3]);
+        point_args.add("C_y3_y3", private_calculated_commitments[4]);
+        point_args.add("C_y4_y4", private_calculated_commitments[5]);
+
+        point_args.add("G_x0_x0", public_commitments[0]);
+        point_args.add("G_x1_x1", public_commitments[1]);
+        point_args.add("G_y1_y1", public_commitments[2]);
+        point_args.add("G_y2_y2", public_commitments[3]);
+        point_args.add("G_y3_y3", public_commitments[4]);
+        point_args.add("G_y4_y4", public_commitments[5]);
+
+        let poksho_proof = Self::get_poksho_statement()
+            .prove(
+                &scalar_args,
+                &point_args,
+                &[],
+                &sho.squeeze(RANDOMNESS_LEN)[..],
+            )
+            .unwrap();
+
+        VoteCredentialChallengeProof { poksho_proof }
+    }
+
+    pub fn verify(
+        &self,
+        user_commitments: [RistrettoPoint; 6],
+        private_calculated_commitments: [RistrettoPoint; 6],
+        public_commitments: [RistrettoPoint; 6],
+    ) -> Result<(), ZkVerificationFailure> {
+        let credentials_system = credentials::SystemParams::get_hardcoded();
+
+        let mut point_args = poksho::PointArgs::new();
+        point_args.add("G_x0", credentials_system.G_x0);
+        point_args.add("G_x1", credentials_system.G_x1);
+        point_args.add("G_y1", credentials_system.G_y[1]);
+        point_args.add("G_y2", credentials_system.G_y[2]);
+        point_args.add("G_y3", credentials_system.G_y[3]);
+        point_args.add("G_y4", credentials_system.G_y[4]);
+        point_args.add("C_x0", user_commitments[0]);
+        point_args.add("C_x1", user_commitments[1]);
+        point_args.add("C_y1", user_commitments[2]);
+        point_args.add("C_y2", user_commitments[3]);
+        point_args.add("C_y3", user_commitments[4]);
+        point_args.add("C_y4", user_commitments[5]);
+
+        point_args.add("C_x0_x0", private_calculated_commitments[0]);
+        point_args.add("C_x1_x1", private_calculated_commitments[1]);
+        point_args.add("C_y1_y1", private_calculated_commitments[2]);
+        point_args.add("C_y2_y2", private_calculated_commitments[3]);
+        point_args.add("C_y3_y3", private_calculated_commitments[4]);
+        point_args.add("C_y4_y4", private_calculated_commitments[5]);
+
+        point_args.add("G_x0_x0", public_commitments[0]);
+        point_args.add("G_x1_x1", public_commitments[1]);
+        point_args.add("G_y1_y1", public_commitments[2]);
+        point_args.add("G_y2_y2", public_commitments[3]);
+        point_args.add("G_y3_y3", public_commitments[4]);
+        point_args.add("G_y4_y4", public_commitments[5]);
+
+        match Self::get_poksho_statement().verify_proof(&self.poksho_proof, &point_args, &[]) {
+            Err(_) => Err(ZkVerificationFailure),
+            Ok(_) => Ok(()),
+        }
+    }
+}

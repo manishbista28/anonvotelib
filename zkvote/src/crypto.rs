@@ -11,3 +11,4 @@ pub mod uid_struct;
 pub mod vote_credential_request;
 pub mod auth_credential_commitment;
 pub mod auth_credential_request;
+pub mod vote_credential_challenge;

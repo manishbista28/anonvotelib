@@ -9,7 +9,9 @@ use crate::common::constants::*;
 use crate::common::errors::*;
 use crate::common::sho::*;
 use crate::common::simple_types::*;
+use crate::crypto::vote_credential_challenge::ChallengeCommitments;
 use crate::{api, crypto};
+use curve25519_dalek::ristretto::RistrettoPoint;
 
 #[derive(Copy, Clone, Serialize, Deserialize)]
 pub struct ServerSecretParams {
@@ -191,6 +193,53 @@ impl ServerSecretParams {
         })
     }
 
+    pub fn provide_vote_challenge_commitments(
+        &self,
+        randomness: RandomnessBytes,
+        request: api::votes::VoteCredentialChallengeRequest,
+    ) -> Result<api::votes::VoteCredentialChallengeResponse, ZkVerificationFailure>  {
+        let mut sho = Sho::new(
+            b"LibVote_zkvote_20230306_Random_ServerSecretParams_ProvideVoteChallengeCommitments",
+            &randomness,
+        );
+        let credentials_system = crypto::credentials::SystemParams::get_hardcoded();
+
+        let user_commitments: [RistrettoPoint; 6] = request.commitments.to_slice();
+        
+        let private_calculated_commitments: [RistrettoPoint;6] = [
+            self.vote_credentials_key_pair.x0 * user_commitments[0],
+            self.vote_credentials_key_pair.x1 * user_commitments[1],
+            self.vote_credentials_key_pair.y[1] * user_commitments[2],
+            self.vote_credentials_key_pair.y[2] * user_commitments[3],
+            self.vote_credentials_key_pair.y[3] * user_commitments[4],
+            self.vote_credentials_key_pair.y[4] * user_commitments[5],
+        ];
+        let public_commitments: [RistrettoPoint;6] = [
+        self.vote_credentials_key_pair.x0 * credentials_system.G_x0,
+        self.vote_credentials_key_pair.x1 * credentials_system.G_x1,
+        self.vote_credentials_key_pair.y[1] * credentials_system.G_y[1],
+        self.vote_credentials_key_pair.y[2] * credentials_system.G_y[2],
+        self.vote_credentials_key_pair.y[3] * credentials_system.G_y[3],
+        self.vote_credentials_key_pair.y[4] * credentials_system.G_y[4],
+        ];
+
+        let proof = crypto::proofs::VoteCredentialChallengeProof::new(
+            self.vote_credentials_key_pair, 
+            user_commitments, 
+            private_calculated_commitments, 
+            public_commitments, 
+            &mut sho,
+        );
+
+
+        Ok(api::votes::VoteCredentialChallengeResponse {
+            private_commitments: crypto::vote_credential_challenge::from_slice(private_calculated_commitments),
+            public_commitments: crypto::vote_credential_challenge::from_slice(public_commitments),
+            public_W: self.vote_credentials_key_pair.w * credentials_system.G_w,
+            proof,
+        })
+        
+    }
 }
 
 impl ServerPublicParams {
@@ -374,6 +423,25 @@ impl ServerPublicParams {
             stake_weight: vwt,
             topic_id: vtid,
         }
+    }
+
+    pub fn receive_vote_challenge_commitment(
+        &self,
+        request_context: &api::votes::VoteCredentialChallengeRequestContext,
+        response: &api::votes::VoteCredentialChallengeResponse,
+    )  {
+        // TODO: ensure response public commitments matches locally saved (blockchain fetched) values
+        response.proof.verify(
+            request_context.commitments.get_commitment().to_slice(), 
+            response.private_commitments.to_slice(),
+            response.public_commitments.to_slice(),
+        ).unwrap();
+        let public_z = self.vote_credentials_public_key.I * request_context.commitments.get_nonce();
+        
+        let p = request_context.commitments.get_commitment();
+        let c_v = request_context.commitments.get_cv();
+        let issued_z = c_v - response.public_W - p.CX0 - p.CX1 - p.CY1 - p.CY2 - p.CY3 - p.CY4;
+        assert_eq!(issued_z, public_z);
     }
 
 }
