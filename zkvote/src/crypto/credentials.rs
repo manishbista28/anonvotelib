@@ -1,7 +1,9 @@
 #![allow(non_snake_case)]
 
+
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
 use curve25519_dalek::ristretto::RistrettoPoint;
+
 use curve25519_dalek::scalar::Scalar;
 use serde::{Deserialize, Serialize};
 
@@ -51,7 +53,7 @@ pub struct SystemParams {
 pub trait AttrScalars {
     /// The storage (should be a fixed-size array of Scalar).
     type Storage: ArrayLike<Scalar> + Copy + Eq + Serialize + for<'a> Deserialize<'a>;
-
+    type PointStorage: ArrayLike<RistrettoPoint> + Copy + Eq + Serialize + for<'a> Deserialize<'a>;
     /// The number of attributes supported in this system.
     ///
     /// Defaults to the full set stored in `Self::Storage`.
@@ -61,12 +63,14 @@ pub trait AttrScalars {
 impl AttrScalars for AuthCredential {
     // Store four scalars for backwards compatibility.
     type Storage = [Scalar; 3];
+    type PointStorage = [RistrettoPoint; 3];
     const NUM_ATTRS: usize = NUM_AUTH_CRED_ATTRIBUTES;
 }
 
 impl AttrScalars for VoteCredential { //TODO
     // Store four scalars for backwards compatibility.
     type Storage = [Scalar; 4];
+    type PointStorage = [RistrettoPoint; 4];
     const NUM_ATTRS: usize = NUM_VOTES_ATTRIBUTES;
 }
 
@@ -83,6 +87,12 @@ pub struct KeyPair<S: AttrScalars> {
     // public
     pub(crate) C_W: RistrettoPoint,
     pub(crate) I: RistrettoPoint,
+    pub(crate) x0_Gx0: RistrettoPoint, // G_x0 ^ x0
+    pub(crate) x1_Gx1: RistrettoPoint, // G_x1 ^ x1
+    pub(crate) x0_Gu: RistrettoPoint, // G_u ^ x0
+    pub(crate) x1_Gu: RistrettoPoint, // G_u ^ x1
+    pub(crate) yn_Gyn: OneBased<S::PointStorage>, // G_y[i] ^ y[i]
+    pub(crate) yn_Gmn: OneBased<S::PointStorage>, // G_m[i] ^ y[i]
 }
 
 impl<S: AttrScalars> Clone for KeyPair<S> {
@@ -109,15 +119,15 @@ impl<S: AttrScalars> PartialEq for KeyPair<S> {
 impl<S: AttrScalars> Eq for KeyPair<S> {}
 
 #[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct PublicKey {
+pub struct PublicKey<S: AttrScalars> {
     pub(crate) C_W: RistrettoPoint,
     pub(crate) I: RistrettoPoint,
     pub(crate) x0_Gx0: RistrettoPoint, // G_x0 ^ x0
     pub(crate) x1_Gx1: RistrettoPoint, // G_x1 ^ x1
     pub(crate) x0_Gu: RistrettoPoint, // G_u ^ x0
     pub(crate) x1_Gu: RistrettoPoint, // G_u ^ x1
-    pub(crate) yn_Gyn: OneBased<[RistrettoPoint; NUM_SUPPORTED_ATTRS]>, // G_y[i] ^ y[i]
-    pub(crate) yn_Gmn: OneBased<[RistrettoPoint; NUM_SUPPORTED_ATTRS]>, // G_m[i] ^ y[i]
+    pub(crate) yn_Gyn: OneBased<S::PointStorage>, // G_y[i] ^ y[i]
+    pub(crate) yn_Gmn: OneBased<S::PointStorage>, // G_m[i] ^ y[i]
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -324,7 +334,7 @@ impl<S: AttrScalars> KeyPair<S> {
         let x1 = sho.get_scalar();
 
         let y = OneBased::<S::Storage>::create(|| sho.get_scalar());
-
+        
         let C_W = (w * system.G_w) + (wprime * system.G_wprime);
         let mut I = system.G_V - (x0 * system.G_x0) - (x1 * system.G_x1);
 
@@ -332,52 +342,59 @@ impl<S: AttrScalars> KeyPair<S> {
             I -= yn * G_yn;
         }
 
-        KeyPair {
-            w,
-            wprime,
-            W,
-            x0,
-            x1,
-            y,
-            C_W,
-            I,
+
+        // Extra Public Parameters
+        let x0_Gx0 = x0 * system.G_x0;
+        let x1_Gx1 = x1 * system.G_x1;
+        let x0_Gu = x0 * system.G_u;
+        let x1_Gu = x1 * system.G_u;
+
+        let mut v_yn_Gyn = Vec::<RistrettoPoint>::with_capacity(S::NUM_ATTRS);
+        let mut v_yn_Gmn = Vec::<RistrettoPoint>::with_capacity(S::NUM_ATTRS);
+    
+        let arr_Gmn = [system.G_m1, system.G_m2, system.G_m3, system.G_m4, system.G_m5, system.G_m6]; // TODO: this should be declared up top
+
+        for i in 0..S::NUM_ATTRS {
+            v_yn_Gyn.push(y[i+1] * system.G_y[i+1]);
+            v_yn_Gmn.push(y[i+1] * arr_Gmn[i]);
         }
+
+        let mut yn_iter = v_yn_Gyn.iter();
+        let yn_Gyn = OneBased::<S::PointStorage>::create(|| yn_iter.next().unwrap().clone());
+        let mut mn_iter = v_yn_Gmn.iter();
+        let yn_Gmn = OneBased::<S::PointStorage>::create(|| mn_iter.next().unwrap().clone());
+       
+
+        KeyPair { 
+            w,
+            wprime, 
+            W, 
+            x0, 
+            x1, 
+            y, 
+            C_W, 
+            I, 
+            x0_Gx0, 
+            x1_Gx1, 
+            x0_Gu,
+            x1_Gu, 
+            yn_Gyn,
+            yn_Gmn
+        }
+
+
     }
 
-    pub fn get_public_key(&self) -> PublicKey {
-        let system = SystemParams::get_hardcoded();
-        let x0_Gx0 = self.x0 * system.G_x0;
-        let x1_Gx1 = self.x1 * system.G_x1;
-        let x0_Gu = self.x0 * system.G_u;
-        let x1_Gu = self.x1 * system.G_u;
-
-        let yn_Gyn: OneBased<[RistrettoPoint; NUM_SUPPORTED_ATTRS]> = OneBased([
-            self.y[1] * system.G_y[1], 
-            self.y[2] * system.G_y[2],
-            self.y[3] * system.G_y[3], 
-            self.y[4] * system.G_y[4], 
-            self.y[5] * system.G_y[5],
-            self.y[6] * system.G_y[6],
-        ]);
-
-        let yn_Gmn: OneBased<[RistrettoPoint; NUM_SUPPORTED_ATTRS]> = OneBased([
-            self.y[1] * system.G_m1, 
-            self.y[2] * system.G_m2,
-            self.y[3] * system.G_m3, 
-            self.y[4] * system.G_m4, 
-            self.y[5] * system.G_m5,
-            self.y[6] * system.G_m6,
-        ]);
-
+    pub fn get_public_key(&self) -> PublicKey<S> {
         PublicKey {
             C_W: self.C_W,
             I: self.I,
-            x0_Gx0,
-            x1_Gx1,
-            x0_Gu,
-            x1_Gu,
-            yn_Gyn,
-            yn_Gmn,
+            x0_Gx0: self.x0_Gx0,
+            x1_Gx1: self.x1_Gx1,
+            x0_Gu: self.x0_Gu,
+            x1_Gu: self.x1_Gu,
+            yn_Gyn: self.yn_Gyn,
+            yn_Gmn: self.yn_Gmn,
         }
     }
 
@@ -538,59 +555,59 @@ mod tests {
         );
         
 
-    //     proof.verify(
-    //         serverKeypair.get_public_key(), 
-    //         clientPubKey, 
-    //         ciphertext, 
-    //         blinded_auth_credential_with_nonce.get_blinded_auth_credential(),
-    //         expiration_time)
-    //         .unwrap();
+        proof.verify(
+            serverKeypair.get_public_key(), 
+            clientPubKey, 
+            ciphertext, 
+            blinded_auth_credential_with_nonce.get_blinded_auth_credential(),
+            expiration_time)
+            .unwrap();
 
-    //     //let mac_bytes = bincode::serialize(&blinded_auth_credential_with_nonce.get_blinded_auth_credential()).unwrap();
-    //     //println!("mac_bytes= {:#x?}", mac_bytes);
-
-
-    //     // Presentation Proof
-    //     let creds = clientEncryptionKeyPair.decrypt_blinded_auth_credential(blinded_auth_credential_with_nonce.get_blinded_auth_credential());
+        //let mac_bytes = bincode::serialize(&blinded_auth_credential_with_nonce.get_blinded_auth_credential()).unwrap();
+        //println!("mac_bytes= {:#x?}", mac_bytes);
 
 
-    //     let master_key = GroupMasterKey::new(TEST_ARRAY_32_1);
-    //     let client_secret_params = GroupSecretParams::derive_from_master_key(master_key);
+        // Presentation Proof
+        let creds = clientEncryptionKeyPair.decrypt_blinded_auth_credential(blinded_auth_credential_with_nonce.get_blinded_auth_credential());
 
-    //     let uuid_ciphertext = client_secret_params.encrypt_uid_struct(uid);
+
+        let master_key = GroupMasterKey::new(TEST_ARRAY_32_1);
+        let client_secret_params = GroupSecretParams::derive_from_master_key(master_key);
+
+        let uuid_ciphertext = client_secret_params.encrypt_uid_struct(uid);
         
-    //     let _ = proofs::AuthCredentialPresentationProof::new(
-    //         serverPubKey,
-    //         client_secret_params.uid_enc_key_pair,
-    //         creds,
-    //         uid,
-    //         uuid_ciphertext.ciphertext,
-    //     ); 
-    // }
+        let _ = proofs::AuthCredentialPresentationProof::new(
+            serverPubKey,
+            client_secret_params.uid_enc_key_pair,
+            creds,
+            uid,
+            uuid_ciphertext.ciphertext,
+        ); 
+    }
 
 
-    // #[test]
-    // fn test_vote_cred_proofs() {
-    //     let mut sho = Sho::new(b"Test_Credentials", b"");
-    //     let serverKeypair = KeyPair::<VoteCredential>::generate(&mut sho);
-    //     let clientEncryptionKeyPair = vote_credential_request::KeyPair::generate(&mut sho);
-    //     let clientPubKey = clientEncryptionKeyPair.get_public_key();
-    //     let serverPubKey = serverKeypair.get_public_key();
+    #[test]
+    fn test_vote_cred_proofs() {
+        let mut sho = Sho::new(b"Test_Credentials", b"");
+        let serverKeypair = KeyPair::<VoteCredential>::generate(&mut sho);
+        let clientEncryptionKeyPair = vote_credential_request::KeyPair::generate(&mut sho);
+        let clientPubKey = clientEncryptionKeyPair.get_public_key();
+        let serverPubKey = serverKeypair.get_public_key();
 
-    //     let vote_type: VoteTypeBytes = [0]; // VOTE_TYPE_LEN
-    //     let vote_id: VoteUniqIDBytes = TEST_ARRAY_32; // VOTE_UNIQ_ID_LEN
-    //     let stake_weight: VoteStakeWeightBytes = TEST_ARRAY_32_1;
-    //     let topic_id: VoteTopicIDBytes = TEST_ARRAY_16;
+        let vote_type: VoteTypeBytes = [0]; // VOTE_TYPE_LEN
+        let vote_id: VoteUniqIDBytes = TEST_ARRAY_32; // VOTE_UNIQ_ID_LEN
+        let stake_weight: VoteStakeWeightBytes = TEST_ARRAY_32_1;
+        let topic_id: VoteTopicIDBytes = TEST_ARRAY_16;
 
-    //     let cipher_with_nonce =  clientEncryptionKeyPair.encrypt_vote_type_id(vote_type, vote_id, &mut sho);
-    //     let ciphertext = cipher_with_nonce.get_ciphertext();
-    //     let blinded_credential = serverKeypair.create_blinded_vote_credential(clientPubKey, ciphertext, &mut sho, stake_weight, topic_id);
+        let cipher_with_nonce =  clientEncryptionKeyPair.encrypt_vote_type_id(vote_type, vote_id, &mut sho);
+        let ciphertext = cipher_with_nonce.get_ciphertext();
+        let blinded_credential = serverKeypair.create_blinded_vote_credential(clientPubKey, ciphertext, &mut sho, stake_weight, topic_id);
 
-    //     _ = proofs::VoteCredentialIssuanceProof::new(serverKeypair, clientPubKey, ciphertext, blinded_credential, stake_weight, topic_id, &mut sho);
+        _ = proofs::VoteCredentialIssuanceProof::new(serverKeypair, clientPubKey, ciphertext, blinded_credential, stake_weight, topic_id, &mut sho);
     
-    //     // Presentation
-    //     let creds = clientEncryptionKeyPair.decrypt_blinded_vote_credential(blinded_credential.get_blinded_vote_credential());
+        // Presentation
+        let creds = clientEncryptionKeyPair.decrypt_blinded_vote_credential(blinded_credential.get_blinded_vote_credential());
 
-    //     _ = proofs::VoteCredentialPresentationProof::new(serverPubKey, creds, &mut sho);
+        _ = proofs::VoteCredentialPresentationProof::new(serverPubKey, creds, &mut sho);
     }
 }
