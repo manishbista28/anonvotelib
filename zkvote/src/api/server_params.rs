@@ -354,7 +354,7 @@ impl ServerPublicParams {
         response: api::votes::VoteCredential,
     ) -> api::votes::VoteCredentialPresentation {
         let mut sho = Sho::new(
-            b"LibVote_zkvote_20230306_Random_ServerPublicParams_CreateAuthCredentialPresentationV2",
+            b"LibVote_zkvote_20230306_Random_ServerPublicParams_CreateVoteCredentialPresentation",
             &randomness,
         );
         
@@ -376,4 +376,37 @@ impl ServerPublicParams {
         }
     }
 
+    pub fn create_vote_credential_presentation_v2(
+        &self,
+        randomness: RandomnessBytes,
+        response: api::votes::VoteCredential,
+    ) -> api::votes::VoteCredentialPresentationV2 {
+        let mut sho = Sho::new(
+            b"LibVote_zkvote_20230306_Random_ServerPublicParams_CreateVoteCredentialPresentationV2",
+            &randomness,
+        );
+        
+        let vtype = response.vote_type.clone();
+        let vid = response.vote_id.clone();
+        let vwt = response.stake_weight.clone();
+        let vtid = response.topic_id.clone();
+
+        let proof = crypto::proofs::VoteCredentialPresentationProofV2::new(
+            self.vote_credentials_public_key,
+            response.credential,
+            response.stake_weight,
+            response.topic_id,
+            response.vote_type,
+            response.vote_id,
+            &mut sho,
+        );
+
+        api::votes::VoteCredentialPresentationV2 {
+            proof,
+            vote_type: vtype,
+            vote_id: vid,
+            stake_weight: vwt,
+            topic_id: vtid,
+        }
+    }
 }

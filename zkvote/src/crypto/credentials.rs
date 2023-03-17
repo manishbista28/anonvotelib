@@ -79,12 +79,12 @@ pub struct KeyPair<S: AttrScalars> {
     // private
     pub(crate) w: Scalar,
     pub(crate) wprime: Scalar,
-    pub(crate) W: RistrettoPoint,
     pub(crate) x0: Scalar,
     pub(crate) x1: Scalar,
     pub(crate) y: OneBased<S::Storage>,
 
     // public
+    pub(crate) W: RistrettoPoint,
     pub(crate) C_W: RistrettoPoint,
     pub(crate) I: RistrettoPoint,
     pub(crate) x0_Gx0: RistrettoPoint, // G_x0 ^ x0
@@ -120,6 +120,7 @@ impl<S: AttrScalars> Eq for KeyPair<S> {}
 
 #[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PublicKey<S: AttrScalars> {
+    pub(crate) W: RistrettoPoint,
     pub(crate) C_W: RistrettoPoint,
     pub(crate) I: RistrettoPoint,
     pub(crate) x0_Gx0: RistrettoPoint, // G_x0 ^ x0
@@ -387,6 +388,7 @@ impl<S: AttrScalars> KeyPair<S> {
 
     pub fn get_public_key(&self) -> PublicKey<S> {
         PublicKey {
+            W: self.W,
             C_W: self.C_W,
             I: self.I,
             x0_Gx0: self.x0_Gx0,
