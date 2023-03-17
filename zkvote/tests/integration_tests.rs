@@ -100,7 +100,7 @@ fn test_integration_auth() {
         vote_credential,
     );
 
-    // Sserver: verfies that the submitted credential is okay
+    // // Sserver: verfies that the submitted credential is okay
     server_secret_params.verify_vote_credential_presentation(&vote_presentation).unwrap();
 
 

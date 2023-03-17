@@ -731,11 +731,11 @@ impl VoteCredentialPresentationProofV2 {
         credentials_public_key.yn_Gyn[2] + credentials_public_key.yn_Gyn[3] + credentials_public_key.yn_Gyn[4];
         let C_V = z * credentials_system.G_V + credential.V;
         let I = credentials_public_key.I;
-        let Z = z * I;
 
         // Scalars listed in order of stmts for debugging
         let mut scalar_args = poksho::ScalarArgs::new();
         scalar_args.add("z", z);
+        scalar_args.add("u", credential.u);
         scalar_args.add("ut", credential.u * credential.t);
         scalar_args.add("m1", m1);
         scalar_args.add("m2", m2);
