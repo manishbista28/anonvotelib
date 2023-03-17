@@ -24,8 +24,8 @@ pub struct ServerSecretParams {
 #[derive(Copy, Clone, Serialize, Deserialize)]
 pub struct ServerPublicParams {
     pub(crate) reserved: ReservedBytes,
-    pub(crate) auth_credentials_public_key: crypto::credentials::PublicKey,
-    pub(crate) vote_credentials_public_key: crypto::credentials::PublicKey,
+    pub(crate) auth_credentials_public_key: crypto::credentials::PublicKey<crypto::credentials::AuthCredential>,
+    pub(crate) vote_credentials_public_key: crypto::credentials::PublicKey<crypto::credentials::VoteCredential>,
     sig_public_key: crypto::signature::PublicKey,
 }
 

@@ -140,7 +140,7 @@ impl AuthCredentialIssuanceProof {
 
     pub fn verify(
         &self,
-        credentials_public_key: credentials::PublicKey,
+        credentials_public_key: credentials::PublicKey<credentials::AuthCredential>,
         request_public_key: auth_credential_request::PublicKey,
         ciphertext: auth_credential_request::Ciphertext,
         blinded_credential: credentials::BlindedAuthCredential,
@@ -268,7 +268,7 @@ impl AuthCredentialPresentationProof {
     }
 
     pub fn new(
-        credentials_public_key: credentials::PublicKey,
+        credentials_public_key: credentials::PublicKey<credentials::AuthCredential>,
         uid_enc_key_pair: uid_encryption::KeyPair,
         credential: credentials::AuthCredential,
         uid: uid_struct::UidStruct,
@@ -504,7 +504,7 @@ impl VoteCredentialIssuanceProof {
 
     pub fn verify(
         &self,
-        credentials_public_key: credentials::PublicKey,
+        credentials_public_key: credentials::PublicKey<credentials::VoteCredential>,
         request_public_key: vote_credential_request::PublicKey,
         ciphertext: vote_credential_request::Ciphertext,
         blinded_credential: credentials::BlindedVoteCredential,
@@ -560,7 +560,7 @@ impl VoteCredentialPresentationProof {
     }
 
     pub fn new(
-        credentials_public_key: credentials::PublicKey,
+        credentials_public_key: credentials::PublicKey<credentials::VoteCredential>,
         credential: credentials::VoteCredential,
         sho: &mut Sho,
     ) -> Self {
