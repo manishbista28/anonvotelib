@@ -89,7 +89,7 @@ impl KeyPair {
         let V = blinded_profile_key_credential.SY - self.y * blinded_profile_key_credential.SX;
         VoteCredential {
             t: blinded_profile_key_credential.t,
-            U: blinded_profile_key_credential.U,
+            u: blinded_profile_key_credential.u,
             V,
         }
     }
