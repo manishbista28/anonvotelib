@@ -112,6 +112,12 @@ impl<S: AttrScalars> Eq for KeyPair<S> {}
 pub struct PublicKey {
     pub(crate) C_W: RistrettoPoint,
     pub(crate) I: RistrettoPoint,
+    pub(crate) x0_Gx0: RistrettoPoint, // G_x0 ^ x0
+    pub(crate) x1_Gx1: RistrettoPoint, // G_x1 ^ x1
+    pub(crate) x0_Gu: RistrettoPoint, // G_u ^ x0
+    pub(crate) x1_Gu: RistrettoPoint, // G_u ^ x1
+    pub(crate) yn_Gyn: OneBased<[RistrettoPoint; NUM_SUPPORTED_ATTRS]>, // G_y[i] ^ y[i]
+    pub(crate) yn_Gmn: OneBased<[RistrettoPoint; NUM_SUPPORTED_ATTRS]>, // G_m[i] ^ y[i]
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -339,9 +345,39 @@ impl<S: AttrScalars> KeyPair<S> {
     }
 
     pub fn get_public_key(&self) -> PublicKey {
+        let system = SystemParams::get_hardcoded();
+        let x0_Gx0 = self.x0 * system.G_x0;
+        let x1_Gx1 = self.x1 * system.G_x1;
+        let x0_Gu = self.x0 * system.G_u;
+        let x1_Gu = self.x1 * system.G_u;
+
+        let yn_Gyn: OneBased<[RistrettoPoint; NUM_SUPPORTED_ATTRS]> = OneBased([
+            self.y[1] * system.G_y[1], 
+            self.y[2] * system.G_y[2],
+            self.y[3] * system.G_y[3], 
+            self.y[4] * system.G_y[4], 
+            self.y[5] * system.G_y[5],
+            self.y[6] * system.G_y[6],
+        ]);
+
+        let yn_Gmn: OneBased<[RistrettoPoint; NUM_SUPPORTED_ATTRS]> = OneBased([
+            self.y[1] * system.G_m1, 
+            self.y[2] * system.G_m2,
+            self.y[3] * system.G_m3, 
+            self.y[4] * system.G_m4, 
+            self.y[5] * system.G_m5,
+            self.y[6] * system.G_m6,
+        ]);
+
         PublicKey {
             C_W: self.C_W,
             I: self.I,
+            x0_Gx0,
+            x1_Gx1,
+            x0_Gu,
+            x1_Gu,
+            yn_Gyn,
+            yn_Gmn,
         }
     }
 
