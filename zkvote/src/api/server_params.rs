@@ -409,4 +409,20 @@ impl ServerPublicParams {
             topic_id: vtid,
         }
     }
+
+
+    pub fn verify_vote_credential_presentation_v2(
+        &self,
+        presentation: &api::votes::VoteCredentialPresentationV2,
+    ) -> Result<(), ZkVerificationFailure> {
+
+        // TODO: ensure presentation params are consistent with server params and current operation
+        presentation.proof.verify(self.vote_credentials_public_key,
+             presentation.vote_type, 
+             presentation.vote_id, 
+             presentation.stake_weight, 
+             presentation.topic_id
+        )
+    }
+
 }

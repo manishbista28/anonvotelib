@@ -95,14 +95,19 @@ fn test_integration_auth() {
     // Client: presents the credential
     let mut srv_vote_present_randomness: RandomnessBytes = [0u8; RANDOMNESS_LEN];
     rng.fill(& mut srv_vote_present_randomness);
+    let vote_presentation = server_public_params.create_vote_credential_presentation_v2(
+        srv_vote_randomness,
+        vote_credential,
+    );
+    // // Sserver: verfies that the submitted credential is okay
+    server_public_params.verify_vote_credential_presentation_v2(&vote_presentation).unwrap();
+
     let vote_presentation = server_public_params.create_vote_credential_presentation(
         srv_vote_randomness,
         vote_credential,
     );
-
     // // Sserver: verfies that the submitted credential is okay
     server_secret_params.verify_vote_credential_presentation(&vote_presentation).unwrap();
-
 
 }
 
