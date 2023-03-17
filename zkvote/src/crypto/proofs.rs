@@ -104,6 +104,7 @@ impl AuthCredentialIssuanceProof {
         scalar_args.add("y3", key_pair.y[3]);
         scalar_args.add("rprime", blinded_credential.rprime);
 
+        let U = blinded_credential.u * credentials_system.G_u; 
         let mut point_args = poksho::PointArgs::new();
         point_args.add("C_W", key_pair.C_W);
         point_args.add("G_w", credentials_system.G_w);
@@ -121,8 +122,8 @@ impl AuthCredentialIssuanceProof {
         point_args.add("DY", ciphertext.DY);
         point_args.add("EY", ciphertext.EY);
         point_args.add("Y", request_public_key.Y);
-        point_args.add("U", blinded_credential.U);
-        point_args.add("tU", blinded_credential.t * blinded_credential.U);
+        point_args.add("U",  U);
+        point_args.add("tU", blinded_credential.t * U);
         point_args.add("M1", expiration_time_scalar * credentials_system.G_m1);
 
 
@@ -147,7 +148,7 @@ impl AuthCredentialIssuanceProof {
     ) -> Result<(), ZkVerificationFailure> {
         let credentials_system = credentials::SystemParams::get_hardcoded();
         let expiration_time_scalar = encode_timestamp(expiration_time);
-
+        let U = blinded_credential.u * credentials_system.G_u; 
         let mut point_args = poksho::PointArgs::new();
         point_args.add("C_W", credentials_public_key.C_W);
         point_args.add("G_w", credentials_system.G_w);
@@ -165,8 +166,8 @@ impl AuthCredentialIssuanceProof {
         point_args.add("DY", ciphertext.DY);
         point_args.add("EY", ciphertext.EY);
         point_args.add("Y", request_public_key.Y);
-        point_args.add("U", blinded_credential.U);
-        point_args.add("tU", blinded_credential.t * blinded_credential.U);
+        point_args.add("U", U);
+        point_args.add("tU", blinded_credential.t * U);
         point_args.add("M1", expiration_time_scalar * credentials_system.G_m1);
 
 
@@ -282,14 +283,14 @@ impl AuthCredentialPresentationProof {
         //let M = credentials::convert_to_points_uid_struct(uid, expiration_time);
 
         let z = sho.get_scalar();
-
+        let U = credential.u * credentials_system.G_u;
         let C_y1 = z * credentials_system.G_y[1];
         let C_y2 = z * credentials_system.G_y[2] + uid.M2;
         let C_y3 = z * credentials_system.G_y[3] + uid.M3;
 
-        let C_x0 = z * credentials_system.G_x0 + credential.U;
+        let C_x0 = z * credentials_system.G_x0 + U;
         let C_V = z * credentials_system.G_V + credential.V;
-        let C_x1 = z * credentials_system.G_x1 + credential.t * credential.U;
+        let C_x1 = z * credentials_system.G_x1 + credential.t * U;
 
         let z0 = -z * credential.t;
         let z1 = -z * uid_enc_key_pair.a2;
@@ -464,6 +465,7 @@ impl VoteCredentialIssuanceProof {
 
         let M1 = credentials::convert_to_point_vote_stake_weight(stake_weight);
         let M2 = credentials::convert_to_point_vote_topic_id(topic_id);
+        let U = blinded_credential.u * credentials_system.G_u;
 
         let mut point_args = poksho::PointArgs::new();
         point_args.add("C_W", key_pair.C_W);
@@ -483,8 +485,8 @@ impl VoteCredentialIssuanceProof {
         point_args.add("DY", ciphertext.DY);
         point_args.add("EY", ciphertext.EY);
         point_args.add("Y", request_public_key.Y);
-        point_args.add("U", blinded_credential.U);
-        point_args.add("tU", blinded_credential.t * blinded_credential.U);
+        point_args.add("U", U);
+        point_args.add("tU", blinded_credential.t * U);
         point_args.add("M1", M1);
         point_args.add("M2", M2);
 
@@ -512,6 +514,7 @@ impl VoteCredentialIssuanceProof {
         let credentials_system = credentials::SystemParams::get_hardcoded();
         let M1 = credentials::convert_to_point_vote_stake_weight(stake_weight);
         let M2 = credentials::convert_to_point_vote_topic_id(topic_id);
+        let U = blinded_credential.u * credentials_system.G_u;
 
         let mut point_args = poksho::PointArgs::new();
         point_args.add("C_W", credentials_public_key.C_W);
@@ -531,8 +534,8 @@ impl VoteCredentialIssuanceProof {
         point_args.add("DY", ciphertext.DY);
         point_args.add("EY", ciphertext.EY);
         point_args.add("Y", request_public_key.Y);
-        point_args.add("U", blinded_credential.U);
-        point_args.add("tU", blinded_credential.t * blinded_credential.U);
+        point_args.add("U", U);
+        point_args.add("tU", blinded_credential.t * U);
         point_args.add("M1", M1);
         point_args.add("M2", M2);
 
@@ -564,15 +567,16 @@ impl VoteCredentialPresentationProof {
         let credentials_system = credentials::SystemParams::get_hardcoded();
 
         let z = sho.get_scalar();
+        let U = credential.u * credentials_system.G_u;
 
         let C_y1 = z * credentials_system.G_y[1];
         let C_y2 = z * credentials_system.G_y[2];
         let C_y3 = z * credentials_system.G_y[3];
         let C_y4 = z * credentials_system.G_y[4];
 
-        let C_x0 = z * credentials_system.G_x0 + credential.U;
+        let C_x0 = z * credentials_system.G_x0 + U;
         let C_V = z * credentials_system.G_V + credential.V;
-        let C_x1 = z * credentials_system.G_x1 + credential.t * credential.U;
+        let C_x1 = z * credentials_system.G_x1 + credential.t * U;
 
         let z0 = -z * credential.t;
 
