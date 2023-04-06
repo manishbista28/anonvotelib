@@ -56,8 +56,8 @@ pub const SIGNATURE_LEN: usize = 64;
 pub const UUID_LEN: usize = 16;
 
 pub const VOTE_TOPIC_ID_LEN: usize = 16;
-pub const VOTE_STAKE_WEIGHT_LEN: usize = 32;
-pub const VOTE_TYPE_LEN: usize = 1;
+pub const VOTE_STAKE_WEIGHT_LEN: usize = 16;
+pub const VOTE_TYPE_LEN: usize = 16;
 pub const VOTE_UNIQ_ID_LEN: usize = 32;
 
 /// Seconds in a 24-hour cycle (ignoring leap seconds).

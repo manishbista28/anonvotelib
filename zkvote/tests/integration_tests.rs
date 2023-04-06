@@ -73,9 +73,9 @@ fn test_integration_auth() {
     let mut vote_req_context_randomness: RandomnessBytes = [0u8; RANDOMNESS_LEN]; 
     rng.fill(&mut vote_req_context_randomness);
 
-    let vote_type: VoteTypeBytes = [1]; // 1 -> yes, 0 -> no, 2 -> sth_else, etc..
+    let vote_type: VoteTypeBytes = [1u8; 16]; // 1 -> yes, 0 -> no, 2 -> sth_else, etc..
     let topic_id: VoteTopicIDBytes = *b"proposal___topic";
-    let stake_weight: VoteStakeWeightBytes = *b"0x00000000000000000000001a2fced4"; // vote credential of how much stake (< total)
+    let stake_weight: VoteStakeWeightBytes = *b"0x0000001a2fced4"; // vote credential of how much stake (< total)
     let vote_req_context = server_public_params.create_vote_credential_request_context(vote_req_context_randomness, vote_type, topic_id, stake_weight, auth_presentation);
 
 

@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 //
 
+use curve25519_dalek::scalar::Scalar;
 use serde::{Deserialize, Serialize};
 
 use crate::common::constants::*;
@@ -95,6 +96,18 @@ impl ServerSecretParams {
              presentation.vote_id, 
              presentation.stake_weight, 
              presentation.topic_id
+        )
+    }
+
+
+    pub fn verify_vote_credential_presentation_v2(
+        &self,
+        presentation: &api::votes::VoteCredentialPresentationV2,
+    ) -> Result<(), ZkVerificationFailure> {
+
+        // TODO: ensure presentation params are consistent with server params and current operation
+        presentation.proof.verify(self.vote_credentials_key_pair,
+             presentation.vote_id, 
         )
     }
 
@@ -375,5 +388,40 @@ impl ServerPublicParams {
             topic_id: vtid,
         }
     }
+
+    pub fn create_vote_credential_presentation_v2(
+        &self,
+        randomness: RandomnessBytes,
+        response: api::votes::VoteCredential,
+        secret: Scalar,
+    ) -> api::votes::VoteCredentialPresentationV2 {
+        let mut sho = Sho::new(
+            b"LibVote_zkvote_20230306_Random_ServerPublicParams_CreateAuthCredentialPresentationV2",
+            &randomness,
+        );
+        let vtype = response.vote_type.clone();
+        let vid = response.vote_id.clone();
+        let vwt = response.stake_weight.clone();
+        let vtid = response.topic_id.clone();
+
+        let proof = crypto::proofs::VoteCredentialPresentationProofV2::new(
+            self.vote_credentials_public_key,
+            response.credential,
+            response.stake_weight,
+            response.topic_id, 
+            response.vote_type,
+            &mut sho,
+            secret,
+        );
+
+        api::votes::VoteCredentialPresentationV2 {
+            proof,
+            vote_type: vtype,
+            vote_id: vid,
+            stake_weight: vwt,
+            topic_id: vtid,
+        }
+    }
+
 
 }

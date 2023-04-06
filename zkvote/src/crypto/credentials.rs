@@ -525,9 +525,9 @@ mod tests {
         let clientPubKey = clientEncryptionKeyPair.get_public_key();
         let serverPubKey = serverKeypair.get_public_key();
 
-        let vote_type: VoteTypeBytes = [0]; // VOTE_TYPE_LEN
+        let vote_type: VoteTypeBytes = [0u8; 16]; // VOTE_TYPE_LEN
         let vote_id: VoteUniqIDBytes = TEST_ARRAY_32; // VOTE_UNIQ_ID_LEN
-        let stake_weight: VoteStakeWeightBytes = TEST_ARRAY_32_1;
+        let stake_weight: VoteStakeWeightBytes = TEST_ARRAY_16_1;
         let topic_id: VoteTopicIDBytes = TEST_ARRAY_16;
 
         let cipher_with_nonce =  clientEncryptionKeyPair.encrypt_vote_type_id(vote_type, vote_id, &mut sho);

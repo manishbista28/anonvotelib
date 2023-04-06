@@ -39,9 +39,9 @@ pub fn encode_timestamp(timestamp: u64) -> Scalar {
 }
 
 pub fn encode_vote_bytes(vote_bytes: VoteTypeBytes) -> Scalar {
-    assert_eq!(vote_bytes.len(), 1); // should be less than eq 32
+    assert_eq!(vote_bytes.len(), 16); // should be less than eq 32
     let mut scalar_bytes: [u8; 32] = Default::default();
-    scalar_bytes[0..1].copy_from_slice(&vote_bytes[..]);
+    scalar_bytes[0..VOTE_TYPE_LEN].copy_from_slice(&vote_bytes[..]);
     Scalar::from_bytes_mod_order(scalar_bytes)
 }
 
@@ -53,7 +53,7 @@ pub fn encode_vote_id(vote_id: VoteUniqIDBytes) -> Scalar {
 }
 
 pub fn encode_vote_stake_weight(stake_weight: VoteStakeWeightBytes) -> Scalar {
-    assert_eq!(stake_weight.len(), 32); // should be less than eq 32
+    assert_eq!(stake_weight.len(), 16); // should be less than eq 16
     let mut scalar_bytes: [u8; 32] = Default::default();
     scalar_bytes[0..VOTE_STAKE_WEIGHT_LEN].copy_from_slice(&stake_weight[..]);
     Scalar::from_bytes_mod_order(scalar_bytes)
