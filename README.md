@@ -83,3 +83,6 @@ cargo test
 ```
 
 [Integration-test](https://github.com/manishbista28/anonvotelib/blob/main/zkvote/tests/integration_tests.rs) includes a basic follow through of necessary APIs to issue and cast a vote.
+
+Refer CL Signture on how these schemes can be made publicly verifiable.
+For the moment, the current state does not have the public verifiability feature.
