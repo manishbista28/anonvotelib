@@ -20,7 +20,7 @@ dependencies = [
  "rand",
  "sharks",
  "strobe-rng",
- "strobe-rs",
+ "strobe-rs 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "zeroize",
 ]
 
@@ -558,7 +558,7 @@ dependencies = [
  "rand_core 0.6.4",
  "serde",
  "strobe-rng",
- "strobe-rs",
+ "strobe-rs 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "zeroize",
 ]
 
@@ -758,7 +758,7 @@ dependencies = [
  "rand_core 0.6.4",
  "sta-rs-test-utils",
  "strobe-rng",
- "strobe-rs",
+ "strobe-rs 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "zeroize",
 ]
 
@@ -772,7 +772,7 @@ dependencies = [
  "rayon",
  "sta-rs",
  "strobe-rng",
- "strobe-rs",
+ "strobe-rs 0.8.1",
  "zipf",
 ]
 
@@ -781,12 +781,25 @@ name = "strobe-rng"
 version = "0.2.0"
 dependencies = [
  "rand_core 0.6.4",
- "strobe-rs",
+ "strobe-rs 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "strobe-rs"
 version = "0.8.1"
+dependencies = [
+ "bitflags",
+ "byteorder",
+ "keccak",
+ "subtle",
+ "zeroize",
+]
+
+[[package]]
+name = "strobe-rs"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fabb238a1cccccfa4c4fb703670c0d157e1256c1ba695abf1b93bd2bb14bab2d"
 dependencies = [
  "bitflags",
  "byteorder",
