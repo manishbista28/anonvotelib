@@ -14,7 +14,7 @@ license = "AGPL-3.0-only"
 features = ["serde"]
 version = "3.0.0"
 git = "https://github.com/signalapp/curve25519-dalek.git"
-branch = "lizard2"
+branch = "3.0.0-lizard2"
 
 [dependencies]
 sha2 = "0.9"

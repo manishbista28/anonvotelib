@@ -7,7 +7,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 
 extern crate zkvote;
 
-fn benchmark_integration_auth(c: &mut Criterion) {
+fn benchmark_integration_auth(_c: &mut Criterion) {
     // let server_secret_params = zkvote::ServerSecretParams::generate(zkvote::TEST_ARRAY_32);
     // let server_public_params = server_secret_params.get_public_params();
 

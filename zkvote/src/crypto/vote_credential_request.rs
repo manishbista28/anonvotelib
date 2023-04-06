@@ -58,10 +58,11 @@ impl KeyPair {
         vote_type: VoteTypeBytes,
         vote_id: VoteUniqIDBytes,
         sho: &mut Sho,
+        isv2: bool,
     ) -> CiphertextWithSecretNonce {
         
-        let M3 = credentials::convert_to_point_vote_type(vote_type);
-        let M4 = credentials::convert_to_point_vote_id(vote_id);
+        let M3 = credentials::convert_to_point_vote_type(vote_type, isv2);
+        let M4 = credentials::convert_to_point_vote_id(vote_id, isv2);
 
         let rX = sho.get_scalar();
         let rY = sho.get_scalar();

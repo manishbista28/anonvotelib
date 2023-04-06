@@ -4,6 +4,7 @@ use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 use serde::{Deserialize, Serialize};
+use sha2::Sha256;
 
 use crate::common::array_utils::{ArrayLike, OneBased};
 use crate::common::sho::*;
@@ -173,7 +174,11 @@ pub(crate) fn convert_to_points_uid_struct(
 
 pub(crate) fn convert_to_point_vote_stake_weight(
     stake_weight: VoteStakeWeightBytes,
+    isv2: bool,
 ) -> RistrettoPoint {
+    if isv2 {
+        return RistrettoPoint::lizard_encode::<Sha256>(&stake_weight)
+    }
     let system = SystemParams::get_hardcoded();
     let vote_scalar = encode_vote_stake_weight(stake_weight);
     vote_scalar * system.G_m1
@@ -181,7 +186,11 @@ pub(crate) fn convert_to_point_vote_stake_weight(
 
 pub(crate) fn convert_to_point_vote_topic_id(
     topic_id: VoteTopicIDBytes,
+    isv2: bool,
 ) -> RistrettoPoint {
+    if isv2 {
+        return RistrettoPoint::lizard_encode::<Sha256>(&topic_id)
+    }
     let system = SystemParams::get_hardcoded();
     let vote_scalar = encode_vote_topic_id(topic_id);
     vote_scalar * system.G_m2
@@ -189,7 +198,11 @@ pub(crate) fn convert_to_point_vote_topic_id(
 
 pub(crate) fn convert_to_point_vote_type(
     vote_type: VoteTypeBytes,
+    isv2: bool,
 ) -> RistrettoPoint {
+    if isv2 {
+        return RistrettoPoint::lizard_encode::<Sha256>(&vote_type)
+    }
     let system = SystemParams::get_hardcoded();
     let vote_scalar = encode_vote_bytes(vote_type);
     vote_scalar * system.G_m3
@@ -197,6 +210,7 @@ pub(crate) fn convert_to_point_vote_type(
 
 pub(crate) fn convert_to_point_vote_id(
     vote_id: VoteUniqIDBytes,
+    _isv2: bool,
 ) -> RistrettoPoint {
     let system = SystemParams::get_hardcoded();
     let vote_scalar = encode_vote_id(vote_id);
@@ -389,11 +403,12 @@ impl KeyPair<VoteCredential> {
         sho: &mut Sho,
         stake_weight: VoteStakeWeightBytes,
         topic_id: VoteTopicIDBytes,
+        isv2: bool,
     ) -> BlindedVoteCredentialWithSecretNonce {
 
         let M = [
-            convert_to_point_vote_stake_weight(stake_weight), // M1
-            convert_to_point_vote_topic_id(topic_id),         // M2
+            convert_to_point_vote_stake_weight(stake_weight, isv2), // M1
+            convert_to_point_vote_topic_id(topic_id, isv2),         // M2
         ];
 
         let (t, U, Vprime) = self.credential_core(&M, sho);
@@ -525,16 +540,16 @@ mod tests {
         let clientPubKey = clientEncryptionKeyPair.get_public_key();
         let serverPubKey = serverKeypair.get_public_key();
 
-        let vote_type: VoteTypeBytes = [0]; // VOTE_TYPE_LEN
+        let vote_type: VoteTypeBytes = [0u8; 16]; // VOTE_TYPE_LEN
         let vote_id: VoteUniqIDBytes = TEST_ARRAY_32; // VOTE_UNIQ_ID_LEN
-        let stake_weight: VoteStakeWeightBytes = TEST_ARRAY_32_1;
+        let stake_weight: VoteStakeWeightBytes = TEST_ARRAY_16_1;
         let topic_id: VoteTopicIDBytes = TEST_ARRAY_16;
 
-        let cipher_with_nonce =  clientEncryptionKeyPair.encrypt_vote_type_id(vote_type, vote_id, &mut sho);
+        let cipher_with_nonce =  clientEncryptionKeyPair.encrypt_vote_type_id(vote_type, vote_id, &mut sho, false);
         let ciphertext = cipher_with_nonce.get_ciphertext();
-        let blinded_credential = serverKeypair.create_blinded_vote_credential(clientPubKey, ciphertext, &mut sho, stake_weight, topic_id);
+        let blinded_credential = serverKeypair.create_blinded_vote_credential(clientPubKey, ciphertext, &mut sho, stake_weight, topic_id, false);
 
-        _ = proofs::VoteCredentialIssuanceProof::new(serverKeypair, clientPubKey, ciphertext, blinded_credential, stake_weight, topic_id, &mut sho);
+        _ = proofs::VoteCredentialIssuanceProof::new(serverKeypair, clientPubKey, ciphertext, blinded_credential, stake_weight, topic_id, &mut sho, false);
     
         // Presentation
         let creds = clientEncryptionKeyPair.decrypt_blinded_vote_credential(blinded_credential.get_blinded_vote_credential());
