@@ -88,8 +88,7 @@ impl KeyPair {
         let V = blinded_auth_credential.SY - self.y * blinded_auth_credential.SX;
         AuthCredential {
             t: blinded_auth_credential.t,
-            u: blinded_auth_credential.u,
-            // U: blinded_auth_credential.U,
+            U: blinded_auth_credential.U,
             V,
         }
     }

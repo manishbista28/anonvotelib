@@ -8,4 +8,4 @@ pub use vote_credential_request::VoteCredentialRequest;
 pub use vote_credential_request_context::VoteCredentialRequestContext;
 pub use vote_credential::VoteCredential;
 pub use vote_credential_response::VoteCredentialResponse;
-pub use vote_credential_presentation::{VoteCredentialPresentation, VoteCredentialPresentationV2};
+pub use vote_credential_presentation::VoteCredentialPresentation;

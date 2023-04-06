@@ -24,8 +24,8 @@ pub struct ServerSecretParams {
 #[derive(Copy, Clone, Serialize, Deserialize)]
 pub struct ServerPublicParams {
     pub(crate) reserved: ReservedBytes,
-    pub(crate) auth_credentials_public_key: crypto::credentials::PublicKey<crypto::credentials::AuthCredential>,
-    pub(crate) vote_credentials_public_key: crypto::credentials::PublicKey<crypto::credentials::VoteCredential>,
+    pub(crate) auth_credentials_public_key: crypto::credentials::PublicKey,
+    pub(crate) vote_credentials_public_key: crypto::credentials::PublicKey,
     sig_public_key: crypto::signature::PublicKey,
 }
 
@@ -354,7 +354,7 @@ impl ServerPublicParams {
         response: api::votes::VoteCredential,
     ) -> api::votes::VoteCredentialPresentation {
         let mut sho = Sho::new(
-            b"LibVote_zkvote_20230306_Random_ServerPublicParams_CreateVoteCredentialPresentation",
+            b"LibVote_zkvote_20230306_Random_ServerPublicParams_CreateAuthCredentialPresentationV2",
             &randomness,
         );
         
@@ -374,55 +374,6 @@ impl ServerPublicParams {
             stake_weight: vwt,
             topic_id: vtid,
         }
-    }
-
-    pub fn create_vote_credential_presentation_v2(
-        &self,
-        randomness: RandomnessBytes,
-        response: api::votes::VoteCredential,
-    ) -> api::votes::VoteCredentialPresentationV2 {
-        let mut sho = Sho::new(
-            b"LibVote_zkvote_20230306_Random_ServerPublicParams_CreateVoteCredentialPresentationV2",
-            &randomness,
-        );
-        
-        let vtype = response.vote_type.clone();
-        let vid = response.vote_id.clone();
-        let vwt = response.stake_weight.clone();
-        let vtid = response.topic_id.clone();
-
-        let proof = crypto::proofs::VoteCredentialPresentationProofV2::new(
-            self.vote_credentials_public_key,
-            response.credential,
-            response.stake_weight,
-            response.topic_id,
-            response.vote_type,
-            response.vote_id,
-            &mut sho,
-        );
-
-        api::votes::VoteCredentialPresentationV2 {
-            proof,
-            vote_type: vtype,
-            vote_id: vid,
-            stake_weight: vwt,
-            topic_id: vtid,
-        }
-    }
-
-
-    pub fn verify_vote_credential_presentation_v2(
-        &self,
-        presentation: &api::votes::VoteCredentialPresentationV2,
-    ) -> Result<(), ZkVerificationFailure> {
-
-        // TODO: ensure presentation params are consistent with server params and current operation
-        presentation.proof.verify(self.vote_credentials_public_key,
-             presentation.vote_type, 
-             presentation.vote_id, 
-             presentation.stake_weight, 
-             presentation.topic_id
-        )
     }
 
 }
