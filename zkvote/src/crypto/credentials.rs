@@ -175,7 +175,7 @@ pub(crate) fn convert_to_point_vote_stake_weight(
     stake_weight: VoteStakeWeightBytes,
 ) -> RistrettoPoint {
     let system = SystemParams::get_hardcoded();
-    let vote_scalar = encode_vote_id(stake_weight);
+    let vote_scalar = encode_vote_stake_weight(stake_weight);
     vote_scalar * system.G_m1
 }
 
