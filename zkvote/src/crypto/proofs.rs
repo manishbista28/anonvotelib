@@ -10,12 +10,14 @@ use crate::common::constants::*;
 use crate::common::errors::*;
 use crate::common::sho::*;
 use crate::common::simple_types::*;
+use crate::crypto::credentials::convert_to_point_vote_stake_weight;
+use crate::crypto::credentials::convert_to_point_vote_topic_id;
+use crate::crypto::credentials::convert_to_point_vote_type;
 use crate::crypto::{
     credentials, uid_encryption, uid_struct,
     auth_credential_commitment, auth_credential_request,
     vote_credential_request,
 };
-use sha2::Sha256;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct AuthCredentialIssuanceProof {
@@ -464,6 +466,7 @@ impl VoteCredentialIssuanceProof {
         stake_weight: VoteStakeWeightBytes,
         topic_id: VoteTopicIDBytes,
         sho: &mut Sho,
+        isv2: bool,
     ) -> Self {
         let credentials_system = credentials::SystemParams::get_hardcoded();
 
@@ -478,8 +481,8 @@ impl VoteCredentialIssuanceProof {
         scalar_args.add("y4", key_pair.y[4]);
         scalar_args.add("rprime", blinded_credential.rprime);
 
-        let M1 = credentials::convert_to_point_vote_stake_weight(stake_weight);
-        let M2 = credentials::convert_to_point_vote_topic_id(topic_id);
+        let M1 = credentials::convert_to_point_vote_stake_weight(stake_weight, isv2);
+        let M2 = credentials::convert_to_point_vote_topic_id(topic_id, isv2);
 
         let mut point_args = poksho::PointArgs::new();
         point_args.add("C_W", key_pair.C_W);
@@ -524,10 +527,11 @@ impl VoteCredentialIssuanceProof {
         blinded_credential: credentials::BlindedVoteCredential,
         stake_weight: VoteStakeWeightBytes,
         topic_id: VoteTopicIDBytes,
+        isv2: bool,
     ) -> Result<(), ZkVerificationFailure> {
         let credentials_system = credentials::SystemParams::get_hardcoded();
-        let M1 = credentials::convert_to_point_vote_stake_weight(stake_weight);
-        let M2 = credentials::convert_to_point_vote_topic_id(topic_id);
+        let M1 = credentials::convert_to_point_vote_stake_weight(stake_weight, isv2);
+        let M2 = credentials::convert_to_point_vote_topic_id(topic_id, isv2);
 
         let mut point_args = poksho::PointArgs::new();
         point_args.add("C_W", credentials_public_key.C_W);
@@ -671,10 +675,11 @@ impl VoteCredentialPresentationProof {
             ..
         } = credentials_key_pair;
 
-        let M1 = credentials::convert_to_point_vote_stake_weight(stake_weight);
-        let M2 = credentials::convert_to_point_vote_topic_id(topic_id);
-        let M3 = credentials::convert_to_point_vote_type(vote_type);
-        let M4 = credentials::convert_to_point_vote_id(vote_id);
+        let isv2 = false;
+        let M1 = credentials::convert_to_point_vote_stake_weight(stake_weight, isv2);
+        let M2 = credentials::convert_to_point_vote_topic_id(topic_id, isv2);
+        let M3 = credentials::convert_to_point_vote_type(vote_type, isv2);
+        let M4 = credentials::convert_to_point_vote_id(vote_id, isv2);
 
         
         let Z = C_V - W - x0 * C_x0 - x1 * C_x1 - (y1 * (C_y1 + M1)) - (y2 * (C_y2 + M2))- (y3 * (C_y3 + M3)) - (y4 * (C_y4 + M4));
@@ -736,9 +741,9 @@ impl VoteCredentialPresentationProofV2 {
         let r1s = r1 * secret;
         let r2s = r2 * secret;
         let r3s = r3 * secret;
-        let M1 = RistrettoPoint::lizard_encode::<Sha256>(&stake_weight);
-        let M2 = RistrettoPoint::lizard_encode::<Sha256>(&topic_id);
-        let M3 = RistrettoPoint::lizard_encode::<Sha256>(&vote_type);
+        let M1 = convert_to_point_vote_stake_weight(stake_weight, true);
+        let M2 = convert_to_point_vote_topic_id(topic_id, true);
+        let M3 = convert_to_point_vote_type(vote_type, true);
         let E1_X = r1 * credentials_system.G_m1;
         let E2_X = r2 * credentials_system.G_m2;
         let E3_X = r3 * credentials_system.G_m3;
@@ -859,11 +864,10 @@ impl VoteCredentialPresentationProofV2 {
         } = credentials_key_pair;
 
 
-        let M4 = credentials::convert_to_point_vote_id(vote_id);
+        let M4 = credentials::convert_to_point_vote_id(vote_id, true);
 
         
         let Z = C_V - W - x0 * C_x0 - x1 * C_x1 - (y1 * C_y1) - (y2 * C_y2)- (y3 * C_y3) - (y4 * (C_y4 + M4));
-
         let Es = E.clone();
 
         assert_eq!(Es.len(), 6);

@@ -1,3 +1,4 @@
+use curve25519_dalek::scalar::Scalar;
 use rand::Rng;
 use zkvote::{
     RandomnessBytes, 
@@ -76,7 +77,8 @@ fn test_integration_auth() {
     let vote_type: VoteTypeBytes = [1u8; 16]; // 1 -> yes, 0 -> no, 2 -> sth_else, etc..
     let topic_id: VoteTopicIDBytes = *b"proposal___topic";
     let stake_weight: VoteStakeWeightBytes = *b"0x0000001a2fced4"; // vote credential of how much stake (< total)
-    let vote_req_context = server_public_params.create_vote_credential_request_context(vote_req_context_randomness, vote_type, topic_id, stake_weight, auth_presentation);
+    let isv2 = true;
+    let vote_req_context = server_public_params.create_vote_credential_request_context(vote_req_context_randomness, vote_type, topic_id, stake_weight, auth_presentation, isv2);
 
 
     // Client: sends auth_req_obj to the server
@@ -86,22 +88,39 @@ fn test_integration_auth() {
     // Server: issues vote credential for the request
     let mut srv_vote_randomness: RandomnessBytes = [0u8; RANDOMNESS_LEN];
     rng.fill(& mut srv_vote_randomness);
-    let vote_credential_response = server_secret_params.issue_vote_credential(srv_vote_randomness, &vote_req_obj, topic_id, client_public_params);
+    let vote_credential_response = server_secret_params.issue_vote_credential(srv_vote_randomness, &vote_req_obj, topic_id, client_public_params, isv2);
 
     // Client: verifies response of the vote credential request and extracts vote credential
-    let vote_credential = server_public_params.receive_vote_credential(&vote_req_context, &vote_credential_response.unwrap()).unwrap();
+    let vote_credential = server_public_params.receive_vote_credential(&vote_req_context, &vote_credential_response.unwrap(), isv2).unwrap();
 
     
     // Client: presents the credential
-    let mut srv_vote_present_randomness: RandomnessBytes = [0u8; RANDOMNESS_LEN];
-    rng.fill(& mut srv_vote_present_randomness);
-    let vote_presentation = server_public_params.create_vote_credential_presentation(
-        srv_vote_randomness,
-        vote_credential,
-    );
+    if !isv2 {
+        let mut srv_vote_present_randomness: RandomnessBytes = [0u8; RANDOMNESS_LEN];
+        rng.fill(& mut srv_vote_present_randomness);
+        let vote_presentation = server_public_params.create_vote_credential_presentation(
+            srv_vote_randomness,
+            vote_credential,
+        );
 
-    // Sserver: verfies that the submitted credential is okay
-    server_secret_params.verify_vote_credential_presentation(&vote_presentation).unwrap();
+        // Sserver: verfies that the submitted credential is okay
+        server_secret_params.verify_vote_credential_presentation(&vote_presentation).unwrap();
+    } else {
+        // Client: presents the credential
+        let scalar_bytes: [u8; 32] = [1u8; 32];
+        let secret= Scalar::from_bytes_mod_order(scalar_bytes);
+
+        let vote_presentationv2 = server_public_params.create_vote_credential_presentation_v2(
+            srv_vote_randomness,
+            vote_credential,
+            secret,
+        );
+    
+        // Sserver: verfies that the submitted credential is okay
+        server_secret_params.verify_vote_credential_presentation_v2(&vote_presentationv2).unwrap();
+    }
+
+
 
 
 }

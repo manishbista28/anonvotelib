@@ -162,6 +162,7 @@ impl ServerSecretParams {
         request: &api::votes::VoteCredentialRequest,
         vote_topic: VoteTopicIDBytes,
         client_public_params: api::groups::GroupPublicParams,
+        isv2: bool,
     ) -> Result<api::votes::VoteCredentialResponse, ZkVerificationFailure> {
         let mut sho = Sho::new(
             b"LibVote_zkvote_20230306_Random_ServerSecretParams_IssueAuthCredential",
@@ -185,6 +186,7 @@ impl ServerSecretParams {
                 &mut sho, 
                 request.stake_weight, 
                 request.topic_id, 
+                isv2,
             );
 
         let proof = crypto::proofs::VoteCredentialIssuanceProof::new(
@@ -194,8 +196,10 @@ impl ServerSecretParams {
             blinded_credential_with_secret_nonce,
             request.stake_weight,
             request.topic_id,
-            & mut sho
+            & mut sho,
+            isv2,
         );
+        
         Ok(api::votes::VoteCredentialResponse {
             reserved: Default::default(),
             blinded_credential: blinded_credential_with_secret_nonce
@@ -306,6 +310,7 @@ impl ServerPublicParams {
         topic_id: VoteTopicIDBytes, 
         stake_weight: VoteStakeWeightBytes,
         auth_presentation: api::auth::AuthCredentialPresentation,
+        isv2: bool,
     ) -> api::votes::VoteCredentialRequestContext {
         let mut sho = Sho::new(
             b"LibVote_zkvote_20230306_Random_ServerPublicParams_CreateAuthCredentialRequestContext",
@@ -314,7 +319,7 @@ impl ServerPublicParams {
         let mut vote_id = [0u8; VOTE_UNIQ_ID_LEN];
         vote_id.copy_from_slice(&sho.squeeze(VOTE_UNIQ_ID_LEN));
         let key_pair = crypto::vote_credential_request::KeyPair::generate(&mut sho);
-        let ciphertext_with_secret_nonce = key_pair.encrypt_vote_type_id(vote_type, vote_id, &mut sho);
+        let ciphertext_with_secret_nonce = key_pair.encrypt_vote_type_id(vote_type, vote_id, &mut sho, isv2);
 
         api::votes::VoteCredentialRequestContext {
             reserved: Default::default(),
@@ -332,6 +337,7 @@ impl ServerPublicParams {
         &self,
         request: &api::votes::VoteCredentialRequestContext,
         response: &api::votes::VoteCredentialResponse,
+        isv2: bool,
     ) -> Result<api::votes::VoteCredential, ZkVerificationFailure> {
         response.proof.verify(
             self.vote_credentials_public_key,
@@ -340,6 +346,7 @@ impl ServerPublicParams {
             response.blinded_credential,
             request.stake_weight,
             request.topic_id,
+            isv2,
         )?;
 
         let credential = request
