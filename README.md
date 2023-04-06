@@ -9,7 +9,7 @@ The basic requirement of any anonymous voting application is to cast vote such t
 To meet these requirements, and few other secondary ones, this library implements a protocol using [Keyed-Verification Anonymous Credentials](https://eprint.iacr.org/2013/516), whose integral assumption is that issuer and verifier of a credential (here, voting credential) is the same entity (or entities that share a common secret value). To elaborate, a user could prove his identity and show a proof of eligiblity to a server, which will then provide the user with a voting credential. This voting credential has no user-identifiable value but holds all information necessary to cast the vote. The user can later present this voting credential anonymously to cast the vote. 
 
 
-The library's implementation is inspired from and makes use of Signal messaging app's [core library](https://github.com/signalapp/libsignal). Thanks to the Signal team for making their project open-source.
+The library's implementation is inspired from and makes use of Signal messaging app's [core library](https://github.com/signalapp/libsignal). Additionally, it uses Brave's [STAR protocol](https://github.com/brave/sta-rs) for threshold aggregation of cast votes. Thanks to the Signal and Brave team for making their project open-source.
 
 ## Protocol at a high level
 
@@ -21,9 +21,7 @@ The basic set of steps is as follows:
 
 2. User Requirements:
 
-    Each of the users have a private key corresponding to the public key registered on the server. For a user to prove his identity to the server, he needs to provide or prove knowledge of secret identifying information (e.g. passwords). These identifiers themselves need to be refreshed periodically to alleviate the risk of potential compromise. So, the user generates a new 16 byte secret key and its Pedersen commitment to publish it to the server which is done through mutually authenticated channel. After publishing, the server holds the tuple (Public Key, Pedersen Commitment of Ephemeral Key, Total Voting Weight) for its list of voters.
-    
-    To provide further detail on how this commitment publishing can be done: the server provides a unique secret value encrypted with the user's public key. The corresponding user will decrypt and obtain this unique secret value. The user will now provide the server with its Pedersen commitment, its public key and the unique secret value encrypted with the server's public key. The server after decrypting the response ascertains the authenticity of the response and publishes the Pedersen commitment under the user's name. This mutual authentication is not part of this library and something the client and server applications should implement.
+    Each of the users have a private key corresponding to the public key registered on the server. For a user to prove his identity to the server, he needs to provide or prove knowledge of secret identifier (e.g. passwords). So the user, at first, generates a 16 byte ephemeral secret key and provides its Pedersen commitment to the server. This can be done through mutually authenticated channels. With this, the server will now hold the tuple (Public Key, Pedersen Commitment of Ephemeral Key, Total Voting Weight) for its list of voters.
 
 3. User generates Authentication Credential.
     
@@ -50,7 +48,7 @@ The basic set of steps is as follows:
 
 6. User presents Voting Credential(s) to cast vote
 
-    As mentioned above, the user can possess multiple voting credentials each with different voting-weights, preference, etc. These credentials can be submitted anonymously (through different IPs and accounts). The server verifies that these credentials are valid and casts the vote. The cast vote is visible to all immediately after the server publishes it and the server does not have to wait till all voters have submitted their votes. If it is necessary that the cast votes be visible only after all voting submissions, then further extensions are necessary after this stage.
+    As mentioned above, the user can possess multiple voting credentials each with different voting-weights, preference, etc. These credentials can be submitted anonymously (through different IPs and accounts). Additionally, the attributes themselves can be provided to the server in an encrypted form. These encrypted attributes can only be decrypted by the server when a certain pre-specified number of such unique submissions is received. This ensures that neither the server nor or other users will be susceptible to any bias based on attributes of votes already cast. After the threshold is met and decryption key can be extracted by the server, it can now decipher the attributes of credential, which it had verified before and publish the results. 
 
 
 The protocol has the benefit of being flexible. Different attributes necessary for a credential can be added and removed if necessary. Attributes can be encrypted or submitted in plain text. Multiple credentials can be issued and verified separately making modular implementations possible and composed later efficiently to make more complex processes possible.
@@ -59,17 +57,18 @@ It is also generic in the sense that credential issuance and verification can be
 
 ## Limitations
 
-As mentioned above, server is able to publish votes as soon as it receives and the votes themselves are not encrypted to the server. It might in some cases be necessary to publish votes after all votes or cast. Requirements like these likely form a relatively small minority and their implementations can be more intertwined with the specific usecase. For a generic library like this, these requirements are for now considered out of scope. 
-
-However, if any suggestions do seem prudent, please suggest through a github issue. 
-
+For secret sharing scheme, which is used to encrypt attributes during credential presentation, to work, the users need to have knowledge of a *common secret string* that the server is not aware of. Additionally, this *common secret string* needs to be different between voting rounds. One way to do so, is to first establish a  group secret through any secure medium. Generating a hash of this group secret and vote subject identifier will yield a different *common secret string* every time. This approach requires a single group communication at the start and the server itself will not be able to determine the seed phrase used.
 
 ## Folder structure
 
 poksho: Signal's [poksho](https://github.com/signalapp/libsignal/tree/main/rust/poksho) package that includes implementation of Sigma protocol for zero-knowledge proofs.
 
+sta-rs: Brave's [STAR protocol]((https://github.com/brave/sta-rs)) for threshold aggregation.
+
 
 zkvote: Implements functionality specific to anonymous voting and exposes APIs.
+
+
 
 
 ## Building
