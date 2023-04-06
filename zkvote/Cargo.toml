@@ -9,6 +9,7 @@ license = "AGPL-3.0-only"
 [dependencies]
 poksho = { path = "../poksho" }
 sta-rs = { path = "../sta-rs/sta-rs" }
+sta-rs-test-utils = { path = "../sta-rs/sta-rs/test-utils" }
 bincode = "1.2.1"
 serde = { version = "1.0.106", features = ["derive"] }
 sha2 = "0.9.0"
