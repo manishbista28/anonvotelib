@@ -8,7 +8,7 @@ use zkvote::{
 use zkvote::common::constants::*;
 
 use sta_rs::*;
-use sta_rs_test_utils::*;
+
 
 #[test]
 fn test_integration_auth() {
@@ -125,59 +125,12 @@ fn test_integration_auth() {
 
 
 #[test]
-fn star_no_aux_multiple_block() {
-    let mut clients = Vec::new();
-    let threshold = 2;
-    let epoch = "t";
-    let str1 = "hello world";
-    let str2 = "goodbye sweet prince";
-    for i in 0..10 {
-      if i % 3 == 0 {
-        clients.push(MessageGenerator::new(
-          SingleMeasurement::new(str1.as_bytes()),
-          threshold,
-          epoch,
-        ));
-      } else if i % 4 == 0 {
-        clients.push(MessageGenerator::new(
-          SingleMeasurement::new(str2.as_bytes()),
-          threshold,
-          epoch,
-        ));
-      } else {
-        clients.push(MessageGenerator::new(
-          SingleMeasurement::new(&[i as u8]),
-          threshold,
-          epoch,
-        ));
-      }
-    }
-    let agg_server = AggregationServer::new(threshold, epoch);
-  
-    let messages: Vec<Message> = clients
-      .into_iter()
-      .map(|mg| {
-        let mut rnd = [0u8; 32];
-        mg.sample_local_randomness(&mut rnd);
-        Message::generate(&mg, &rnd, None).unwrap()
-      })
-      .collect();
-    let outputs = agg_server.retrieve_outputs(&messages[..]);
-    for o in outputs {
-      let tag_str = std::str::from_utf8(o.x.as_slice())
-        .unwrap()
-        .trim_end_matches(char::from(0));
-      if tag_str == str1 {
-        assert_eq!(o.aux.len(), 4);
-      } else if tag_str == str2 {
-        assert_eq!(o.aux.len(), 2);
-      } else {
-        panic!("Unexpected tag: {}", tag_str);
-      }
-  
-      for b in o.aux.into_iter().flatten() {
-        panic!("Unexpected auxiliary data: {:?}", b);
-      }
-    }
-  }
-  
+fn serialize_ciphertext() {
+  let mg = MessageGenerator::new(SingleMeasurement::new(b"foobar"), 0, "epoch");
+  let mut rnd = [0u8; 32];
+  mg.sample_local_randomness(&mut rnd);
+  let triple = Message::generate(&mg, &rnd, None)
+    .expect("Failed to generate message triplet");
+  let bytes = triple.ciphertext.to_bytes();
+  assert_eq!(Ciphertext::from_bytes(&bytes), triple.ciphertext);
+}

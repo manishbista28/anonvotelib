@@ -63,9 +63,6 @@ For secret sharing scheme, which is used to encrypt attributes during credential
 
 poksho: Signal's [poksho](https://github.com/signalapp/libsignal/tree/main/rust/poksho) package that includes implementation of Sigma protocol for zero-knowledge proofs.
 
-sta-rs: Brave's [STAR protocol]((https://github.com/brave/sta-rs)) for threshold aggregation.
-
-
 zkvote: Implements functionality specific to anonymous voting and exposes APIs.
 
 

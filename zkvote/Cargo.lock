@@ -16,6 +16,7 @@ dependencies = [
 [[package]]
 name = "adss-rs"
 version = "0.2.0"
+source = "git+https://github.com/brave/sta-rs.git#a0381f242314a906425e39f73656717e024636f3"
 dependencies = [
  "rand 0.8.5",
  "sharks",
@@ -323,6 +324,20 @@ dependencies = [
 name = "curve25519-dalek"
 version = "3.0.0"
 source = "git+https://github.com/signalapp/curve25519-dalek.git?branch=3.0.0-lizard2#b3329ed05ce7ffae5b7c18b9b6e1fd3588eaf468"
+dependencies = [
+ "byteorder",
+ "digest",
+ "rand_core 0.5.1",
+ "serde",
+ "subtle",
+ "zeroize",
+]
+
+[[package]]
+name = "curve25519-dalek"
+version = "3.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b9fdf9972b2bd6af2d913799d9ebc165ea4d2e65878e329d9c6b372c4491b61"
 dependencies = [
  "byteorder",
  "digest",
@@ -653,7 +668,7 @@ dependencies = [
 name = "poksho"
 version = "0.7.0"
 dependencies = [
- "curve25519-dalek",
+ "curve25519-dalek 3.0.0",
  "hmac",
  "sha2",
 ]
@@ -673,11 +688,12 @@ dependencies = [
 [[package]]
 name = "ppoprf"
 version = "0.2.0"
+source = "git+https://github.com/brave/sta-rs.git#a0381f242314a906425e39f73656717e024636f3"
 dependencies = [
  "base64",
  "bincode",
  "bitvec",
- "curve25519-dalek",
+ "curve25519-dalek 3.2.0",
  "derive_more",
  "rand 0.8.5",
  "rand_core 0.5.1",
@@ -909,6 +925,7 @@ dependencies = [
 [[package]]
 name = "sharks"
 version = "0.5.0"
+source = "git+https://github.com/brave/sta-rs.git#a0381f242314a906425e39f73656717e024636f3"
 dependencies = [
  "bitvec",
  "byteorder",
@@ -921,6 +938,7 @@ dependencies = [
 [[package]]
 name = "sta-rs"
 version = "0.2.0"
+source = "git+https://github.com/brave/sta-rs.git#a0381f242314a906425e39f73656717e024636f3"
 dependencies = [
  "adss-rs",
  "ppoprf",
@@ -931,22 +949,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "sta-rs-test-utils"
-version = "0.2.0"
-dependencies = [
- "ppoprf",
- "rand 0.8.5",
- "rand_core 0.6.4",
- "rayon",
- "sta-rs",
- "strobe-rng",
- "strobe-rs",
- "zipf",
-]
-
-[[package]]
 name = "strobe-rng"
 version = "0.2.0"
+source = "git+https://github.com/brave/sta-rs.git#a0381f242314a906425e39f73656717e024636f3"
 dependencies = [
  "rand_core 0.6.4",
  "strobe-rs",
@@ -1190,24 +1195,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "zipf"
-version = "7.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "835688a7a1b5d2dfaeb5b7e1b4cfb979e7095a70cd1c72fe083f4904ef3e995e"
-dependencies = [
- "rand 0.8.5",
-]
-
-[[package]]
 name = "zkvote"
 version = "0.9.0"
 dependencies = [
  "aead",
  "aes-gcm-siv",
- "base64",
  "bincode",
  "criterion",
- "curve25519-dalek",
+ "curve25519-dalek 3.0.0",
  "displaydoc",
  "hex",
  "lazy_static",
@@ -1216,5 +1211,4 @@ dependencies = [
  "serde",
  "sha2",
  "sta-rs",
- "sta-rs-test-utils",
 ]
